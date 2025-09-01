@@ -1,0 +1,608 @@
+{
+  "source": "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Dashboard",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 20
+        }
+      },
+      {
+        "comment": "",
+        "key": "History",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Heart",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Heart Rate",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "LIVE",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 103
+        }
+      },
+      {
+        "comment": "",
+        "key": "BPM",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 107
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 115
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "Apple Watch",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 183
+        }
+      },
+      {
+        "comment": "",
+        "key": "Demo Mode",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 185
+        }
+      },
+      {
+        "comment": "",
+        "key": "Today's Summary",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 205
+        }
+      },
+      {
+        "comment": "",
+        "key": "History",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 399
+        }
+      },
+      {
+        "comment": "",
+        "key": "Orthostatic Events",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 317
+        }
+      },
+      {
+        "comment": "",
+        "key": "Heart Rate History",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 348
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 337
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld → %lld BPM",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 327
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld BPM",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 357
+        }
+      },
+      {
+        "comment": "",
+        "key": "--",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 368
+        }
+      },
+      {
+        "comment": "",
+        "key": "--",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 380
+        }
+      },
+      {
+        "comment": "",
+        "key": "Standing",
+        "location": {
+          "startingColumn": 73,
+          "startingLine": 363
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sitting",
+        "location": {
+          "startingColumn": 86,
+          "startingLine": 363
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sort Heart Rate History",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 417
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 423
+        }
+      },
+      {
+        "comment": "",
+        "key": "Share Heart Rate Data",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 640
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export Options",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 566
+        }
+      },
+      {
+        "comment": "",
+        "key": "Quick Actions",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 598
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 644
+        }
+      },
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 957
+        }
+      },
+      {
+        "comment": "",
+        "key": "Device Connection",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 905
+        }
+      },
+      {
+        "comment": "",
+        "key": "Notifications",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 911
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recording Settings",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 915
+        }
+      },
+      {
+        "comment": "",
+        "key": "Heart Rate Alerts",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 929
+        }
+      },
+      {
+        "comment": "",
+        "key": "About",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 945
+        }
+      },
+      {
+        "comment": "",
+        "key": "Enable Notifications",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 912
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recording Interval",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 917
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recording Interval",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 919
+        }
+      },
+      {
+        "comment": "",
+        "key": "8 seconds",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 920
+        }
+      },
+      {
+        "comment": "",
+        "key": "30 seconds",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 921
+        }
+      },
+      {
+        "comment": "",
+        "key": "1 minute",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 922
+        }
+      },
+      {
+        "comment": "",
+        "key": "2 minutes",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 923
+        }
+      },
+      {
+        "comment": "",
+        "key": "High Heart Rate",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 931
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld BPM",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 933
+        }
+      },
+      {
+        "comment": "",
+        "key": "Low Heart Rate",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 938
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld BPM",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 940
+        }
+      },
+      {
+        "comment": "",
+        "key": "Privacy Policy",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 953
+        }
+      },
+      {
+        "comment": "",
+        "key": "Terms of Service",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 954
+        }
+      },
+      {
+        "comment": "",
+        "key": "Version",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 947
+        }
+      },
+      {
+        "comment": "",
+        "key": "1.0.0",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 949
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recent Orthostatic Patterns",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 969
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%lld)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 972
+        }
+      },
+      {
+        "comment": "",
+        "key": "Today's Heart Rate Trend",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1014
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%lld readings)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1017
+        }
+      },
+      {
+        "comment": "",
+        "key": "No heart rate data available",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1026
+        }
+      },
+      {
+        "comment": "",
+        "key": "Data will appear here when available",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1029
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ - %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1046
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1142
+        }
+      },
+      {
+        "comment": "",
+        "key": "--:--",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1222
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Data",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 1246
+        }
+      },
+      {
+        "comment": "",
+        "key": "Peak:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1260
+        }
+      },
+      {
+        "comment": "",
+        "key": "--",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1262
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sustained:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1268
+        }
+      },
+      {
+        "comment": "",
+        "key": "--",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1270
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recovery:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1276
+        }
+      },
+      {
+        "comment": "",
+        "key": "--",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1278
+        }
+      },
+      {
+        "comment": "",
+        "key": "POTS",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1314
+        }
+      },
+      {
+        "comment": "",
+        "key": "Peak:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1330
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld BPM",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1332
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sustained:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1339
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recovery:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1347
+        }
+      },
+      {
+        "comment": "",
+        "key": "Stand",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1420
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Recovery",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1431
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recovered",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 1427
+        }
+      },
+      {
+        "comment": "",
+        "key": "Partial",
+        "location": {
+          "startingColumn": 68,
+          "startingLine": 1427
+        }
+      }
+    ]
+  },
+  "version": 1
+}

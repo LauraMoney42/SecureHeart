@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'Secure Heart' in project 'SecureHeart'
+➜ Explicit dependency on target 'Secure Heart Watch App' in project 'SecureHeart'
+Target 'Secure Heart Watch App' in project 'SecureHeart' (no dependencies)

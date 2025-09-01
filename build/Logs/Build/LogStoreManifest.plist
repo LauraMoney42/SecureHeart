@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>11</integer>
+	<key>logs</key>
+	<dict>
+		<key>523A55C3-B596-4A85-81C3-5A5D6F630BC8</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>523A55C3-B596-4A85-81C3-5A5D6F630BC8.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>1</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>2</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>SecureHeart project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>Secure Heart</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Building project SecureHeart with scheme Secure Heart and configuration Debug</string>
+			<key>timeStartedRecording</key>
+			<real>778448352.37256801</real>
+			<key>timeStoppedRecording</key>
+			<real>778448497.11477804</real>
+			<key>title</key>
+			<string>Building project SecureHeart with scheme Secure Heart and configuration Debug</string>
+			<key>uniqueIdentifier</key>
+			<string>523A55C3-B596-4A85-81C3-5A5D6F630BC8</string>
+		</dict>
+		<key>CF34EDA2-3E63-4EB5-9698-E194F9C5B82D</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>CF34EDA2-3E63-4EB5-9698-E194F9C5B82D.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>3</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>1</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>SecureHeart project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>Secure Heart</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Building project SecureHeart with scheme Secure Heart and configuration Debug</string>
+			<key>timeStartedRecording</key>
+			<real>778446374.24917805</real>
+			<key>timeStoppedRecording</key>
+			<real>778446380.16512001</real>
+			<key>title</key>
+			<string>Building project SecureHeart with scheme Secure Heart and configuration Debug</string>
+			<key>uniqueIdentifier</key>
+			<string>CF34EDA2-3E63-4EB5-9698-E194F9C5B82D</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

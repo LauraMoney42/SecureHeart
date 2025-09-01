@@ -1,0 +1,272 @@
+{
+  "source": "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart Watch App/SettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 203
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recording",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 134
+        }
+      },
+      {
+        "comment": "",
+        "key": "Appearance",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 157
+        }
+      },
+      {
+        "comment": "",
+        "key": "Data",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 169
+        }
+      },
+      {
+        "comment": "",
+        "key": "Info",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 192
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recording Interval",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 143
+        }
+      },
+      {
+        "comment": "",
+        "key": "Interval",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 140
+        }
+      },
+      {
+        "comment": "",
+        "key": "8 sec",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 144
+        }
+      },
+      {
+        "comment": "",
+        "key": "30 sec",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 145
+        }
+      },
+      {
+        "comment": "",
+        "key": "1 min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 146
+        }
+      },
+      {
+        "comment": "",
+        "key": "2 min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 147
+        }
+      },
+      {
+        "comment": "",
+        "key": "Themes",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 163
+        }
+      },
+      {
+        "comment": "",
+        "key": "History",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 175
+        }
+      },
+      {
+        "comment": "",
+        "key": "Send Test Data",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 186
+        }
+      },
+      {
+        "comment": "",
+        "key": "About",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 198
+        }
+      },
+      {
+        "comment": "",
+        "key": "Themes",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 273
+        }
+      },
+      {
+        "comment": "",
+        "key": "Color Themes",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 218
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Custom Colors",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 242
+        }
+      },
+      {
+        "comment": "",
+        "key": "Preview",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 251
+        }
+      },
+      {
+        "comment": "",
+        "key": "History",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 342
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld BPM",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 293
+        }
+      },
+      {
+        "comment": "",
+        "key": "—",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 305
+        }
+      },
+      {
+        "comment": "",
+        "key": "—",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 318
+        }
+      },
+      {
+        "comment": "",
+        "key": "About",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 413
+        }
+      },
+      {
+        "comment": "",
+        "key": "Heart",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 376
+        }
+      },
+      {
+        "comment": "",
+        "key": "Secure Health Suite",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 380
+        }
+      },
+      {
+        "comment": "",
+        "key": "Version 1.0",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 385
+        }
+      },
+      {
+        "comment": "",
+        "key": "Monitor your heart rate with beautiful themes and customizable watch faces.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 389
+        }
+      },
+      {
+        "comment": "",
+        "key": "Contact",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 399
+        }
+      },
+      {
+        "comment": "",
+        "key": "kindcode.us",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 404
+        }
+      },
+      {
+        "comment": "",
+        "key": "Custom Colors",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 557
+        }
+      },
+      {
+        "comment": "",
+        "key": "Custom Colors",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 500
+        }
+      },
+      {
+        "comment": "",
+        "key": "Preview",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 534
+        }
+      }
+    ]
+  },
+  "version": 1
+}
