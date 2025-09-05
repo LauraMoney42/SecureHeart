@@ -1,0 +1,408 @@
+{
+  "source": "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Dashboard",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 18
+        }
+      },
+      {
+        "comment": "",
+        "key": "History",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 25
+        }
+      },
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 32
+        }
+      },
+      {
+        "comment": "",
+        "key": "Secure Heart",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 72
+        }
+      },
+      {
+        "comment": "",
+        "key": "POTS Monitoring",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "Current HR",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recent Average",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 109
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "Delta",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 120
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@%lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 124
+        }
+      },
+      {
+        "comment": "",
+        "key": "BPM",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 128
+        }
+      },
+      {
+        "comment": "",
+        "key": "Heart rate stable (within ±30 BPM)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 153
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recent Orthostatic Patterns",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 255
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%lld)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 258
+        }
+      },
+      {
+        "comment": "",
+        "key": "Today's Heart Rate",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 293
+        }
+      },
+      {
+        "comment": "",
+        "key": "Orthostatic Vital Signs",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 314
+        }
+      },
+      {
+        "comment": "",
+        "key": "Supine → Standing",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 317
+        }
+      },
+      {
+        "comment": "",
+        "key": "Event:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 376
+        }
+      },
+      {
+        "comment": "",
+        "key": "POTS+",
+        "location": {
+          "startingColumn": 82,
+          "startingLine": 389
+        }
+      },
+      {
+        "comment": "",
+        "key": "Normal",
+        "location": {
+          "startingColumn": 92,
+          "startingLine": 389
+        }
+      },
+      {
+        "comment": "",
+        "key": "140",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 410
+        }
+      },
+      {
+        "comment": "",
+        "key": "120",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 412
+        }
+      },
+      {
+        "comment": "",
+        "key": "100",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 414
+        }
+      },
+      {
+        "comment": "",
+        "key": "80",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 416
+        }
+      },
+      {
+        "comment": "",
+        "key": "60",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 418
+        }
+      },
+      {
+        "comment": "",
+        "key": "POTS Threshold (+30)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 501
+        }
+      },
+      {
+        "comment": "",
+        "key": "Started:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 524
+        }
+      },
+      {
+        "comment": "",
+        "key": "Duration:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 535
+        }
+      },
+      {
+        "comment": "",
+        "key": "10 minutes",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 538
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ended:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 546
+        }
+      },
+      {
+        "comment": "",
+        "key": "ΔHR:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 561
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 566
+        }
+      },
+      {
+        "comment": "",
+        "key": "Supine",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 596
+        }
+      },
+      {
+        "comment": "",
+        "key": "Standing",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 600
+        }
+      },
+      {
+        "comment": "",
+        "key": "POTS Criteria",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 604
+        }
+      },
+      {
+        "comment": "",
+        "key": "No readings today",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 650
+        }
+      },
+      {
+        "comment": "",
+        "key": "150",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 660
+        }
+      },
+      {
+        "comment": "",
+        "key": "130",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 662
+        }
+      },
+      {
+        "comment": "",
+        "key": "100",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 664
+        }
+      },
+      {
+        "comment": "",
+        "key": "80",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 666
+        }
+      },
+      {
+        "comment": "",
+        "key": "60",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 668
+        }
+      },
+      {
+        "comment": "",
+        "key": "50",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 670
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Events",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 812
+        }
+      },
+      {
+        "comment": "",
+        "key": "--",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 816
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 832
+        }
+      },
+      {
+        "comment": "",
+        "key": "BPM",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 837
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld BPM",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 890
+        }
+      },
+      {
+        "comment": "",
+        "key": "• Sustained",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 895
+        }
+      },
+      {
+        "comment": "",
+        "key": "✓",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 911
+        }
+      }
+    ]
+  },
+  "version": 1
+}

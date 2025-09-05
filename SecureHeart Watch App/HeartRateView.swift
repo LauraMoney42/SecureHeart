@@ -13,6 +13,7 @@ struct HeartRateView: View {
     @State private var crownValue: Double = 0
     @State private var isAlwaysOnDisplay = false
     @State private var showingHistory = false
+    @State private var showingSettings = false
     @State private var historyOffset: CGFloat = 0
     
     @AppStorage("selectedColorTheme") private var selectedColorTheme = 3
@@ -170,21 +171,32 @@ struct HeartRateView: View {
             }
             .navigationBarHidden(true)
             .ignoresSafeArea(.all)
-            .overlay(settingsOverlay, alignment: .top)
             .onAppear {
                 pulseAnimation = true
                 setupAlwaysOnDisplay()
+                // Force start monitoring when view appears
+                heartRateManager.requestAuthorization()
+                heartRateManager.startContinuousMonitoring()
             }
+            .onTapGesture {
+                // Manual refresh on tap
+                heartRateManager.fetchLatestHeartRate()
+            }
+            #if os(watchOS)
             .focusable()
             .digitalCrownRotation($crownValue, from: 0, through: 10, by: digitalCrownSensitivity, sensitivity: .high, isContinuous: true, isHapticFeedbackEnabled: true)
             .onChange(of: crownValue) { _, newValue in
                 handleDigitalCrownRotation(newValue)
             }
+            #endif
             .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
                 detectAlwaysOnState()
             }
             .animation(.easeInOut(duration: 0.3), value: heartRateManager.showAlert)
             .animation(.easeInOut(duration: 0.3), value: showingHistory)
+            .sheet(isPresented: $showingSettings) {
+                SettingsView(heartRateManager: heartRateManager)
+            }
         }
     }
     
@@ -222,33 +234,22 @@ struct HeartRateView: View {
         }
     }
     
-    private var settingsOverlay: some View {
-        VStack {
-            HStack {
-                NavigationLink(destination: SettingsView(heartRateManager: heartRateManager)) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .padding(.leading, 16)
-                .padding(.top, -25)
-                
-                Spacer()
-            }
-            Spacer()
-        }
-    }
     
     private var swipeGesture: some Gesture {
         DragGesture(minimumDistance: 20)
             .onEnded { dragValue in
                 let translation = dragValue.translation
-                // Swipe up to show history (reduced threshold for easier triggering)
-                if translation.height < -30 && !showingHistory {
+                // Swipe up to show history
+                if translation.height < -30 && !showingHistory && !showingSettings {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         showingHistory = true
                         historyOffset = 0
+                    }
+                }
+                // Swipe down to show settings
+                else if translation.height > 30 && !showingSettings && !showingHistory {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showingSettings = true
                     }
                 }
             }
@@ -517,6 +518,17 @@ struct HeartRateView: View {
                 }
                 .offset(x: 70, y: 15)
             }
+            
+            // Posture indicator (top-left corner)
+            VStack(spacing: 2) {
+                Image(systemName: heartRateManager.isStanding ? "figure.stand" : "figure.seated.side")
+                    .font(.system(size: 12))
+                    .foregroundColor(heartRateManager.isStanding ? .green : .blue)
+                Text(heartRateManager.isStanding ? "Standing" : "Sitting")
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .offset(x: -70, y: -60)
         }
     }
     
@@ -788,63 +800,72 @@ struct HeartRateView: View {
                         .padding(.top, 50) // Move down more to avoid settings icon
                         .padding(.bottom, 15)
                     
-                    // History list
+                    // History list - Much larger and more readable
                     ScrollView {
-                        LazyVStack(spacing: 4) {
-                            ForEach(heartRateManager.heartRateHistory) { reading in  // Show all readings, not just 10
-                                HStack(spacing: 3) {
-                                    // Heart rate color indicator
-                                    Circle()
-                                        .fill(colorForHeartRate(reading.heartRate))
-                                        .frame(width: 6, height: 6)
-                                    
-                                    // BPM
-                                    Text("\(reading.heartRate) BPM")
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(.white)
-                                        .frame(width: 45, alignment: .leading)
-                                    
-                                    // Sitting/Standing icon
-                                    if let context = reading.context {
-                                        Image(systemName: context.contains("Standing") ? "figure.stand" : "figure.seated.side")
-                                            .font(.system(size: 8))
+                        LazyVStack(spacing: 8) {
+                            ForEach(heartRateManager.heartRateHistory) { reading in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    // Main row with heart rate and time
+                                    HStack(alignment: .center) {
+                                        // Color indicator
+                                        Circle()
+                                            .fill(colorForHeartRate(reading.heartRate))
+                                            .frame(width: 10, height: 10)
+                                        
+                                        // Heart rate with BPM on same line
+                                        Text("\(reading.heartRate) BPM")
+                                            .font(.system(size: 20, weight: .bold, design: .rounded))
                                             .foregroundColor(.white)
-                                            .frame(width: 12, alignment: .center)
-                                    } else {
-                                        Text("—")
-                                            .font(.system(size: 8))
+                                            .lineLimit(1)
+                                        
+                                        Spacer()
+                                        
+                                        // Time
+                                        Text(formatTime(reading.timestamp))
+                                            .font(.system(size: 14))
                                             .foregroundColor(.gray)
-                                            .frame(width: 12, alignment: .center)
                                     }
                                     
-                                    // Delta indicator  
-                                    if !reading.deltaText.isEmpty {
-                                        Text(reading.deltaText)
-                                            .font(.system(size: 9, weight: .bold))
-                                            .foregroundColor(reading.delta > 0 ? .red : .green)
-                                            .frame(width: 20, alignment: .center)
-                                    } else {
-                                        Text("—")
-                                            .font(.system(size: 8))
-                                            .foregroundColor(.gray)
-                                            .frame(width: 20, alignment: .center)
+                                    // Second row with context and delta
+                                    HStack(spacing: 12) {
+                                        // Standing/Sitting indicator
+                                        if let context = reading.context {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: context.contains("Standing") ? "figure.stand" : "figure.seated.side")
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(.white.opacity(0.8))
+                                                
+                                                Text(context.contains("Standing") ? "Standing" : "Sitting")
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(.white.opacity(0.8))
+                                            }
+                                        }
+                                        
+                                        // Delta indicator
+                                        if !reading.deltaText.isEmpty {
+                                            HStack(spacing: 2) {
+                                                Image(systemName: reading.delta > 0 ? "arrow.up" : "arrow.down")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundColor(reading.delta > 0 ? .red : .green)
+                                                
+                                                Text("\(abs(reading.delta))")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundColor(reading.delta > 0 ? .red : .green)
+                                            }
+                                        }
+                                        
+                                        Spacer()
                                     }
-                                    
-                                    Spacer()
-                                    
-                                    // Time
-                                    Text(formatTime(reading.timestamp))
-                                        .font(.system(size: 8))
-                                        .foregroundColor(.gray)
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 3)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.white.opacity(0.05))
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.white.opacity(0.08))
                                 )
                             }
                         }
+                        .padding(.horizontal, 8)
                         .padding(.bottom, 100)  // Extra bottom padding to ensure last entry is fully visible
                     }
                     .padding(.bottom, 20)  // Additional padding for the ScrollView itself

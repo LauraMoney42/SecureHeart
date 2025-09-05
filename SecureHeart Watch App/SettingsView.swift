@@ -133,36 +133,15 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Recording") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: "timer")
-                                .foregroundColor(.orange)
-                                .frame(width: 20)
-                            Text("Interval")
-                        }
-                        
-                        Picker("Recording Interval", selection: $recordingInterval) {
-                            Text("8 sec").tag(8.0)
-                            Text("30 sec").tag(30.0)
-                            Text("1 min").tag(60.0)
-                            Text("2 min").tag(120.0)
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .onChange(of: recordingInterval) { newInterval in
-                            heartRateManager.updateRecordingInterval(newInterval)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
                 
                 Section("Appearance") {
                     NavigationLink(destination: ThemesView(selectedColorTheme: $selectedColorTheme, colorThemes: colorThemes)) {
                         HStack {
                             Image(systemName: "paintpalette")
                                 .foregroundColor(.blue)
-                                .frame(width: 20)
+                                .frame(width: 24)
                             Text("Themes")
+                                .padding(.vertical, 6)
                         }
                     }
                     
@@ -191,6 +170,50 @@ struct SettingsView: View {
                     }
                 }
                 
+                Section("Debug - Posture Detection") {
+                    // Current posture status
+                    HStack {
+                        Image(systemName: heartRateManager.isStanding ? "figure.stand" : "figure.seated.side")
+                            .foregroundColor(heartRateManager.isStanding ? .green : .blue)
+                            .frame(width: 20)
+                        Text("Currently: \(heartRateManager.isStanding ? "Standing" : "Sitting")")
+                            .foregroundColor(.primary)
+                        Spacer()
+                    }
+                    
+                    // Manual standing button
+                    Button(action: {
+                        heartRateManager.manuallySetStanding(true)
+                        #if canImport(WatchKit)
+                        WKInterfaceDevice.current().play(.click)
+                        #endif
+                    }) {
+                        HStack {
+                            Image(systemName: "figure.stand")
+                                .foregroundColor(.green)
+                                .frame(width: 20)
+                            Text("Set Standing")
+                                .foregroundColor(.primary)
+                        }
+                    }
+                    
+                    // Manual sitting button  
+                    Button(action: {
+                        heartRateManager.manuallySetStanding(false)
+                        #if canImport(WatchKit)
+                        WKInterfaceDevice.current().play(.click)
+                        #endif
+                    }) {
+                        HStack {
+                            Image(systemName: "figure.seated.side")
+                                .foregroundColor(.blue)
+                                .frame(width: 20)
+                            Text("Set Sitting")
+                                .foregroundColor(.primary)
+                        }
+                    }
+                }
+                
                 Section("Info") {
                     NavigationLink(destination: AboutView()) {
                         HStack {
@@ -203,6 +226,7 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .listStyle(CarouselListStyle())
             .navigationBarTitleDisplayMode(.inline)
         }
     }

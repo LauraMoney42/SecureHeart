@@ -37,6 +37,7 @@
 /* Begin PBXFileReference section */
 		2799066E2E5D59D0003D9F9A /* Secure Heart.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Secure Heart.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2799067B2E5D59D3003D9F9A /* Secure Heart Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Secure Heart Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		27FAD6C92E6A49B600931CF9 /* Secure Heart Watch App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Secure Heart Watch App.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -73,6 +74,7 @@
 		279906652E5D59D0003D9F9A = {
 			isa = PBXGroup;
 			children = (
+				27FAD6C92E6A49B600931CF9 /* Secure Heart Watch App.entitlements */,
 				279906702E5D59D0003D9F9A /* SecureHeart */,
 				2799067F2E5D59D3003D9F9A /* SecureHeart Watch App */,
 				2799066F2E5D59D0003D9F9A /* Products */,
@@ -337,14 +339,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Secure Heart Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = G6U69FC9H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Secure Heart";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app needs access to your heart rate data to display current readings and track your fitness metrics.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may write health data to HealthKit for comprehensive fitness tracking.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "SecureHeart needs to read your heart rate data to monitor changes and patterns. No data is shared outside the app.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "SecureHeart only reads heart rate data and does not write any information to HealthKit.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "SecureHeart uses motion and activity data to detect when you are sitting or standing, which helps monitor orthostatic heart rate changes. This data stays on your device.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.securehealthheart;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -359,7 +363,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
 			};
 			name = Debug;
 		};
@@ -368,14 +372,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Secure Heart Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = G6U69FC9H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Secure Heart";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app needs access to your heart rate data to display current readings and track your fitness metrics.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may write health data to HealthKit for comprehensive fitness tracking.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "SecureHeart needs to read your heart rate data to monitor changes and patterns. No data is shared outside the app.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "SecureHeart only reads heart rate data and does not write any information to HealthKit.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "SecureHeart uses motion and activity data to detect when you are sitting or standing, which helps monitor orthostatic heart rate changes. This data stays on your device.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.securehealthheart;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -391,7 +397,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
 			};
 			name = Release;
 		};
@@ -413,7 +419,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -446,7 +452,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

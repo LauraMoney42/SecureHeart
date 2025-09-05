@@ -7,11 +7,11 @@
 
 import Foundation
 import HealthKit
+import WidgetKit
+import CoreMotion
 #if canImport(WatchKit)
 import WatchKit
 #endif
-import WidgetKit
-import CoreMotion
 
 class HeartRateManager: NSObject, ObservableObject {
     private let healthStore = HKHealthStore()
@@ -31,8 +31,20 @@ class HeartRateManager: NSObject, ObservableObject {
     @Published var orthostaticEvents: [OrthostaticEvent] = []
     @Published var isStanding = false
     private let motionManager = CMMotionManager()
+    private let activityManager = CMMotionActivityManager()
     private var standingStartTime: Date?
     private var standingBaselineHeartRate: Int = 0
+    private var debugCounter = 0
+    private var lastActivityUpdate = Date()
+    private var consecutiveStationaryCount = 0
+    
+    // Enhanced feature extraction (inspired by Swift-HAR)
+    private var xAxisSamples: [Double] = []
+    private var yAxisSamples: [Double] = []
+    private var zAxisSamples: [Double] = []
+    private var movementFrequencySamples: [Double] = []
+    private var lastWristAnalysis = Date()
+    private var postureConfidence: Double = 0.5 // Start neutral
     
     // Enhanced sustained elevation tracking
     private var currentOrthostaticEvent: OrthostaticEvent?
@@ -133,7 +145,7 @@ class HeartRateManager: NSObject, ObservableObject {
             default: OrthostacSeverity.normal
             }
             
-            // Upgrade severity for sustained elevation (POTS criteria: 30+ BPM for 10+ minutes)
+            // Upgrade severity for sustained elevation (clinical criteria: 30+ BPM for 10+ minutes)
             if sustainedDuration >= 600 && increase >= 30 { // 10 minutes sustained
                 return .severe
             } else if sustainedDuration >= 180 { // 3+ minutes sustained
@@ -156,8 +168,8 @@ class HeartRateManager: NSObject, ObservableObject {
         }
         
         var clinicalSummary: String {
-            let potsIndicator = sustainedDuration >= 600 && increase >= 30 ? " [POTS Pattern]" : ""
-            return "Peak: +\(increase) BPM, Sustained: \(Int(sustainedDuration))s\(potsIndicator)"
+            let severityIndicator = sustainedDuration >= 600 && increase >= 30 ? " [Sustained Response]" : ""
+            return "Peak: +\(increase) BPM, Sustained: \(Int(sustainedDuration))s\(severityIndicator)"
         }
     }
     
@@ -179,14 +191,18 @@ class HeartRateManager: NSObject, ObservableObject {
     
     override init() {
         super.init()
+        print("🚀 [WATCH] HeartRateManager initializing...")
         requestAuthorization()
         
         // Initialize motion detection for orthostatic monitoring
         startMotionDetection()
         
-        // Automatically start monitoring - TachyMon style
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        // Start monitoring after a short delay for authorization
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            print("🏁 [WATCH] Starting continuous monitoring after delay...")
             self.startContinuousMonitoring()
+            // Also do an immediate fetch
+            self.fetchLatestHeartRate()
         }
         
         // Listen for recording interval updates from iPhone
@@ -197,10 +213,11 @@ class HeartRateManager: NSObject, ObservableObject {
             object: nil
         )
         
-        #if DEBUG && targetEnvironment(simulator)
-        // Add test data for simulator testing
-        addTestData()
-        #endif
+        // COMMENTED OUT FOR REAL DEVICE TESTING
+        // #if DEBUG && targetEnvironment(simulator)
+        // // Add test data for simulator testing
+        // addTestData()
+        // #endif
     }
     
     #if DEBUG
@@ -259,21 +276,21 @@ class HeartRateManager: NSObject, ObservableObject {
     }
     
     private func addTestOrthostaticEvents() {
-        // Realistic POTS episode test data for comprehensive testing
+        // Realistic standing response test data for comprehensive testing
         
-        // POTS Episode #1: Classic POTS pattern - sustained high HR with slow recovery
-        let potsEpisode1 = createPOTSEpisode(
+        // Standing Response #1: Classic pattern - sustained high HR with slow recovery
+        let episode1 = createStandingResponseEpisode(
             timestamp: Date().addingTimeInterval(-1800), // 30 minutes ago
             baseline: 68,
-            peakHR: 112, // +44 BPM (classic POTS threshold: 30+ BPM)
-            sustainedMinutes: 12.5, // Sustained for 12.5 minutes (meets POTS criteria: 10+ min)
+            peakHR: 112, // +44 BPM (significant response: 30+ BPM)
+            sustainedMinutes: 12.5, // Sustained for 12.5 minutes (sustained response criteria: 10+ min)
             recoverySeconds: 180, // 3 minute recovery
             hasFullRecovery: true
         )
-        orthostaticEvents.append(potsEpisode1)
+        orthostaticEvents.append(episode1)
         
-        // POTS Episode #2: Severe POTS with incomplete recovery
-        let potsEpisode2 = createPOTSEpisode(
+        // Standing Response #2: Severe response with incomplete recovery
+        let episode2 = createStandingResponseEpisode(
             timestamp: Date().addingTimeInterval(-7200), // 2 hours ago
             baseline: 72,
             peakHR: 128, // +56 BPM (severe increase)
@@ -281,10 +298,10 @@ class HeartRateManager: NSObject, ObservableObject {
             recoverySeconds: nil, // No recovery - remained elevated
             hasFullRecovery: false
         )
-        orthostaticEvents.append(potsEpisode2)
+        orthostaticEvents.append(episode2)
         
         // Normal Orthostatic Response (for comparison)
-        let normalResponse = createPOTSEpisode(
+        let normalResponse = createStandingResponseEpisode(
             timestamp: Date().addingTimeInterval(-3600), // 1 hour ago
             baseline: 76,
             peakHR: 98, // +22 BPM (normal response)
@@ -294,8 +311,8 @@ class HeartRateManager: NSObject, ObservableObject {
         )
         orthostaticEvents.append(normalResponse)
         
-        // Mild POTS Pattern
-        let mildPOTS = createPOTSEpisode(
+        // Mild Response Pattern
+        let mildResponse = createStandingResponseEpisode(
             timestamp: Date().addingTimeInterval(-450), // 7.5 minutes ago
             baseline: 70,
             peakHR: 105, // +35 BPM
@@ -303,9 +320,9 @@ class HeartRateManager: NSObject, ObservableObject {
             recoverySeconds: 95, // Moderate recovery time
             hasFullRecovery: true
         )
-        orthostaticEvents.append(mildPOTS)
+        orthostaticEvents.append(mildResponse)
         
-        print("🩺 [TEST] Created POTS episode test data with sustained elevations and recovery patterns")
+        print("🩺 [TEST] Created standing response test data with sustained elevations and recovery patterns")
         
         // Send test data to iPhone for dashboard display (delayed to ensure WatchConnectivity is ready)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -313,7 +330,7 @@ class HeartRateManager: NSObject, ObservableObject {
         }
     }
     
-    private func createPOTSEpisode(timestamp: Date, baseline: Int, peakHR: Int, sustainedMinutes: Double, recoverySeconds: Double?, hasFullRecovery: Bool) -> OrthostaticEvent {
+    private func createStandingResponseEpisode(timestamp: Date, baseline: Int, peakHR: Int, sustainedMinutes: Double, recoverySeconds: Double?, hasFullRecovery: Bool) -> OrthostaticEvent {
         let increase = peakHR - baseline
         let sustainedDuration = sustainedMinutes * 60 // Convert to seconds
         let totalStandingDuration = sustainedDuration + (recoverySeconds ?? 0) + 30 // Add buffer
@@ -408,26 +425,54 @@ class HeartRateManager: NSObject, ObservableObject {
         sendTestOrthostaticEventsToiPhone()
     }
     
-    private func simulateOrthostaticEvent() {
-        // 60% chance of normal response, 40% chance of POTS-like episode
-        let isPOTSEpisode = Double.random(in: 0...1) < 0.4
+    // MARK: - Manual Posture Control for Testing
+    func manuallySetStanding(_ standing: Bool) {
+        print("🎛️ [MANUAL] User manually set posture to: \(standing ? "STANDING" : "SITTING")")
         
-        if isPOTSEpisode {
-            simulatePOTSEpisode()
+        if standing && !isStanding {
+            // Manually trigger standing detection
+            startStandingDetection()
+        } else if !standing && isStanding {
+            // Manually trigger sitting detection
+            endStandingDetection()
+        }
+        
+        // Also update the motion detection state directly for consistency
+        DispatchQueue.main.async {
+            self.isStanding = standing
+            
+            // Force send current heart rate with updated posture
+            if self.currentHeartRate > 0 {
+                print("🔄 [MANUAL] Force-sending heart rate \(self.currentHeartRate)")
+                WatchConnectivityManager.shared.sendHeartRateUpdate(
+                    heartRate: self.currentHeartRate, 
+                    delta: self.heartRateDelta,
+                    isStanding: self.isStanding
+                )
+            }
+        }
+    }
+    
+    private func simulateOrthostaticEvent() {
+        // 60% chance of normal response, 40% chance of elevated response episode
+        let isElevatedEpisode = Double.random(in: 0...1) < 0.4
+        
+        if isElevatedEpisode {
+            simulateElevatedResponseEpisode()
         } else {
             simulateNormalOrthostaticResponse()
         }
     }
     
-    private func simulatePOTSEpisode() {
-        print("🧪 [SIMULATOR] Simulating POTS episode with sustained elevation...")
+    private func simulateElevatedResponseEpisode() {
+        print("🧪 [SIMULATOR] Simulating elevated response episode with sustained elevation...")
         
         let baselineRate = Int.random(in: 68...78)
-        let increase = Int.random(in: 35...65) // POTS-range increase (30+ BPM)
+        let increase = Int.random(in: 35...65) // Elevated response range increase (30+ BPM)
         let peakRate = baselineRate + increase
         
-        // POTS characteristics: sustained elevation for several minutes
-        let sustainedDuration = Double.random(in: 300...900) // 5-15 minutes (POTS pattern)
+        // Elevated response characteristics: sustained elevation for several minutes
+        let sustainedDuration = Double.random(in: 300...900) // 5-15 minutes (elevated response pattern)
         let recoveryTime = Double.random(in: 0...1) < 0.3 ? nil : Double.random(in: 120...300) // 30% no recovery
         
         let pattern = generateRealisticHeartRatePattern(
@@ -449,7 +494,7 @@ class HeartRateManager: NSObject, ObservableObject {
             isRecovered: recoveryTime != nil
         )
         
-        print("🩺 [SIMULATOR] POTS Episode: \(event.clinicalSummary)")
+        print("🩺 [SIMULATOR] Standing Response Episode: \(event.clinicalSummary)")
         completeSimulatedEvent(event, baselineRate, peakRate)
     }
     
@@ -590,18 +635,27 @@ class HeartRateManager: NSObject, ObservableObject {
         // NO DATA IS WRITTEN TO HEALTHKIT OR APPLE HEALTH
         // Data only flows: Watch Sensors → Watch App → iPhone App (via WatchConnectivity)
         
+        print("📋 [WATCH] Requesting HealthKit authorization...")
+        
         let typesToRead: Set = [heartRateQuantityType]
         
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { [weak self] success, error in
             DispatchQueue.main.async {
                 self?.isAuthorized = success
-                // Authorization will trigger automatic monitoring
+                print("✅ [WATCH] Authorization result: \(success ? "GRANTED" : "DENIED")")
+                if success {
+                    // Start monitoring immediately after authorization
+                    self?.startContinuousMonitoring()
+                    self?.fetchLatestHeartRate()
+                }
             }
             
             if let error = error {
                 print("🔒 [WATCH] Authorization failed: \(error.localizedDescription)")
             } else if success {
                 print("🔒 [WATCH] HealthKit READ-only authorization granted - NO data written to Apple Health")
+            } else {
+                print("❌ [WATCH] Authorization was denied by user")
             }
         }
     }
@@ -611,6 +665,38 @@ class HeartRateManager: NSObject, ObservableObject {
         startMonitoring()
         enableBackgroundDelivery()
         scheduleComplicationUpdates()
+    }
+    
+    func fetchLatestHeartRate() {
+        // Manual fetch of latest heart rate sample
+        print("🔄 [WATCH] Manual heart rate fetch triggered")
+        
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+        let query = HKSampleQuery(
+            sampleType: heartRateQuantityType,
+            predicate: nil,
+            limit: 1,
+            sortDescriptors: [sortDescriptor]
+        ) { [weak self] _, samples, error in
+            if let error = error {
+                print("❌ [WATCH] Manual fetch error: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let sample = samples?.first as? HKQuantitySample else {
+                print("⚠️ [WATCH] No heart rate samples available")
+                return
+            }
+            
+            let heartRate = sample.quantity.doubleValue(for: HKUnit(from: "count/min"))
+            print("✅ [WATCH] Manual fetch got heart rate: \(Int(heartRate)) BPM")
+            
+            DispatchQueue.main.async {
+                self?.processHeartRateSamples([sample])
+            }
+        }
+        
+        healthStore.execute(query)
     }
     
     func startMonitoring() {
@@ -691,7 +777,8 @@ class HeartRateManager: NSObject, ObservableObject {
         currentHeartRate = newRate
         
         // Send to iPhone via WatchConnectivity
-        WatchConnectivityManager.shared.sendHeartRateUpdate(heartRate: newRate, delta: heartRateDelta)
+        print("📱 [WATCH] Sending heart rate \(newRate) to iPhone with delta \(heartRateDelta)")
+        WatchConnectivityManager.shared.sendHeartRateUpdate(heartRate: newRate, delta: heartRateDelta, isStanding: isStanding)
         
         // Check for orthostatic response
         checkOrthostaticResponse(heartRate: newRate)
@@ -765,6 +852,7 @@ class HeartRateManager: NSObject, ObservableObject {
         lastAlertTime = Date()
         
         // Haptic feedback + sound - all 30+ BPM changes require manual dismissal
+        #if canImport(WatchKit)
         switch severity {
         case .minor:
             // Minor alerts (30+ BPM) - notification haptic + sound
@@ -784,6 +872,7 @@ class HeartRateManager: NSObject, ObservableObject {
                 WKInterfaceDevice.current().play(.failure)
             }
         }
+        #endif
     }
     
     func dismissAlert() {
@@ -803,9 +892,12 @@ class HeartRateManager: NSObject, ObservableObject {
     // MARK: - Workout Session Management
     
     private var workoutSession: HKWorkoutSession?
+    #if os(watchOS)
     private var workoutBuilder: HKLiveWorkoutBuilder?
+    #endif
     
     private func startWorkoutSession() {
+        #if os(watchOS)
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .other
         configuration.locationType = .unknown
@@ -832,10 +924,12 @@ class HeartRateManager: NSObject, ObservableObject {
         } catch {
             print("Failed to start workout session: \(error.localizedDescription)")
         }
+        #endif
     }
     
     private func stopWorkoutSession() {
         workoutSession?.end()
+        #if os(watchOS)
         workoutBuilder?.endCollection(withEnd: Date()) { success, error in
             self.workoutBuilder?.finishWorkout { workout, error in
                 DispatchQueue.main.async {
@@ -844,6 +938,7 @@ class HeartRateManager: NSObject, ObservableObject {
                 }
             }
         }
+        #endif
     }
     
     // MARK: - Complication Support
@@ -919,43 +1014,257 @@ extension HeartRateManager: HKWorkoutSessionDelegate {
     }
 }
 
-// MARK: - Orthostatic Monitoring Extension
+// MARK: - Enhanced Orthostatic Monitoring Extension
 extension HeartRateManager {
     
     private func startMotionDetection() {
-        guard motionManager.isDeviceMotionAvailable else {
-            print("⚠️ [WATCH] Device motion not available")
-            return
+        print("🎯 [WATCH] Starting enhanced motion detection...")
+        
+        // Try Activity Manager first (more accurate for activity detection)
+        if CMMotionActivityManager.isActivityAvailable() {
+            print("✅ [WATCH] Activity Manager available - starting activity updates")
+            activityManager.startActivityUpdates(to: .main) { [weak self] activity in
+                if let activity = activity {
+                    self?.processActivityData(activity)
+                }
+            }
+        } else {
+            print("⚠️ [WATCH] Activity Manager not available")
         }
         
-        motionManager.deviceMotionUpdateInterval = 1.0 // Check every second
-        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
-            guard let motion = motion, error == nil else { return }
+        // Start accelerometer for Swift-HAR style wrist position analysis
+        if motionManager.isAccelerometerAvailable {
+            print("✅ [WATCH] Accelerometer available - starting wrist analysis")
+            motionManager.accelerometerUpdateInterval = 1.0 // Once per second
+            motionManager.startAccelerometerUpdates(to: .main) { [weak self] data, error in
+                if let error = error {
+                    print("❌ [WATCH] Accelerometer error: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let accelData = data else { return }
+                self?.analyzeWristPosture(acceleration: accelData.acceleration)
+            }
+        }
+        
+        print("🏃 [WATCH] Motion detection started")
+        
+        // Set default posture after 5 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            print("🎯 [WATCH] Initial posture check - isStanding: \(self.isStanding)")
             
-            self?.processMotionData(motion)
+            // Default to standing during daytime hours if no motion detected
+            if !self.isStanding {
+                let hour = Calendar.current.component(.hour, from: Date())
+                if hour >= 6 && hour <= 22 {
+                    print("🔧 [WATCH] Defaulting to standing during daytime")
+                    self.isStanding = true
+                }
+            }
         }
         
-        print("🏃 [WATCH] Motion detection started for orthostatic monitoring")
+        // Periodic status check every 60 seconds
+        Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { _ in
+            print("⏰ [WATCH] Status: \(self.isStanding ? "Standing" : "Sitting")")
+            
+            // Timeout detection - assume sitting if no activity updates
+            let timeSinceLastActivity = Date().timeIntervalSince(self.lastActivityUpdate)
+            if timeSinceLastActivity > 120 {
+                print("🛋️ [WATCH] No activity for \(Int(timeSinceLastActivity))s - assuming sitting")
+                if self.isStanding {
+                    self.isStanding = false
+                    self.endStandingDetection()
+                }
+            }
+        }
     }
     
-    private func processMotionData(_ motion: CMDeviceMotion) {
-        // Detect standing based on device orientation and acceleration
-        let gravity = motion.gravity
-        let userAcceleration = motion.userAcceleration
+    // Process activity data from CMMotionActivityManager
+    private func processActivityData(_ activity: CMMotionActivity) {
+        lastActivityUpdate = Date()
+        var newStanding = isStanding
         
-        // Standing detection: device more vertical (gravity.z closer to -1) and low user acceleration
-        let isVertical = gravity.z < -0.7 // Device vertical
-        let isStable = abs(userAcceleration.x) < 0.1 && abs(userAcceleration.y) < 0.1 && abs(userAcceleration.z) < 0.1
-        
-        let shouldBeStanding = isVertical && isStable
-        
-        if shouldBeStanding && !isStanding {
-            // Transition to standing
-            startStandingDetection()
-        } else if !shouldBeStanding && isStanding {
-            // Transition to not standing
-            endStandingDetection()
+        if activity.stationary {
+            print("🪑 [ACTIVITY] User is stationary (likely sitting)")
+            newStanding = false
+            consecutiveStationaryCount += 1
+        } else if activity.walking || activity.running {
+            print("🚶 [ACTIVITY] User is walking/running (standing)")
+            newStanding = true
+            consecutiveStationaryCount = 0
+        } else if activity.automotive || activity.cycling {
+            print("🚗 [ACTIVITY] User in vehicle/cycling (sitting)")
+            newStanding = false
+            consecutiveStationaryCount += 1
         }
+        
+        // Multiple stationary readings = definitely sitting
+        if consecutiveStationaryCount >= 3 {
+            print("🛋️ [ACTIVITY] Multiple stationary readings - definitely sitting")
+            newStanding = false
+        }
+        
+        // Require medium/high confidence for activity-based changes
+        if activity.confidence != .low && newStanding != isStanding {
+            print("🎯 [ACTIVITY] Activity change (conf: \(activity.confidence.rawValue)): \(isStanding ? "Standing" : "Sitting") → \(newStanding ? "Standing" : "Sitting")")
+            
+            // High-priority activities override wrist analysis
+            if activity.walking || activity.running || activity.automotive {
+                if newStanding && !isStanding {
+                    startStandingDetection()
+                } else if !newStanding && isStanding {
+                    endStandingDetection()
+                }
+                print("🎯 [ACTIVITY] High-priority activity - overriding wrist analysis")
+            } else if activity.stationary && consecutiveStationaryCount >= 2 {
+                if !newStanding && isStanding {
+                    endStandingDetection()
+                }
+            }
+        } else {
+            print("🔄 [ACTIVITY] Low confidence or no change - letting wrist analysis decide")
+        }
+    }
+    
+    // Swift-HAR inspired wrist position analysis
+    private func analyzeWristPosture(acceleration: CMAcceleration) {
+        let now = Date()
+        
+        // Capture all three axes separately (Swift-HAR approach)
+        xAxisSamples.append(acceleration.x)
+        yAxisSamples.append(acceleration.y) 
+        zAxisSamples.append(acceleration.z)
+        
+        // Calculate total acceleration magnitude
+        let totalAcceleration = sqrt(pow(acceleration.x, 2) + pow(acceleration.y, 2) + pow(acceleration.z, 2))
+        movementFrequencySamples.append(totalAcceleration)
+        
+        // Rolling window of 10 seconds
+        let maxSamples = 10
+        if xAxisSamples.count > maxSamples {
+            xAxisSamples.removeFirst()
+            yAxisSamples.removeFirst()
+            zAxisSamples.removeFirst()
+            movementFrequencySamples.removeFirst()
+        }
+        
+        // Analyze every 10 seconds
+        if now.timeIntervalSince(lastWristAnalysis) >= 10.0 && xAxisSamples.count >= 5 {
+            lastWristAnalysis = now
+            
+            // Extract features
+            let features = extractPostureFeatures()
+            
+            // Classify with confidence
+            let (likelyStanding, confidence) = classifyPosture(features: features)
+            
+            print("🤖 [WRIST] X:\(String(format: "%.3f", features.xMean)) Y:\(String(format: "%.3f", features.yMean)) Z:\(String(format: "%.3f", features.zMean)) Conf:\(String(format: "%.3f", confidence)) Standing:\(likelyStanding ? "YES" : "NO")")
+            
+            postureConfidence = confidence
+            
+            // Only change with high confidence
+            if likelyStanding != isStanding && confidence > 0.7 {
+                print("🎯 [WRIST] High confidence change: \(isStanding ? "Standing" : "Sitting") → \(likelyStanding ? "Standing" : "Sitting")")
+                
+                if likelyStanding && !isStanding {
+                    startStandingDetection()
+                } else if !likelyStanding && isStanding {
+                    endStandingDetection()
+                }
+            }
+        }
+    }
+    
+    // Feature extraction from multi-axis data
+    private func extractPostureFeatures() -> PostureFeatures {
+        let xMean = xAxisSamples.reduce(0, +) / Double(xAxisSamples.count)
+        let yMean = yAxisSamples.reduce(0, +) / Double(yAxisSamples.count)
+        let zMean = zAxisSamples.reduce(0, +) / Double(zAxisSamples.count)
+        
+        let xVariance = calculateVariance(xAxisSamples)
+        let yVariance = calculateVariance(yAxisSamples)
+        let zVariance = calculateVariance(zAxisSamples)
+        
+        let movementMean = movementFrequencySamples.reduce(0, +) / Double(movementFrequencySamples.count)
+        let movementVariance = calculateVariance(movementFrequencySamples)
+        
+        let xRange = (xAxisSamples.max() ?? 0) - (xAxisSamples.min() ?? 0)
+        let yRange = (yAxisSamples.max() ?? 0) - (yAxisSamples.min() ?? 0)
+        let zRange = (zAxisSamples.max() ?? 0) - (zAxisSamples.min() ?? 0)
+        
+        return PostureFeatures(
+            xMean: xMean, yMean: yMean, zMean: zMean,
+            xVariance: xVariance, yVariance: yVariance, zVariance: zVariance,
+            movementMean: movementMean, movementVariance: movementVariance,
+            xRange: xRange, yRange: yRange, zRange: zRange
+        )
+    }
+    
+    // Neural network inspired classification
+    private func classifyPosture(features: PostureFeatures) -> (standing: Bool, confidence: Double) {
+        var standingScore: Double = 0.0
+        var totalWeight: Double = 0.0
+        
+        // Z-axis orientation (40% weight)
+        let zWeight = 0.4
+        if abs(features.zMean) > 0.5 {
+            standingScore += zWeight * (features.zMean > 0 ? 1.0 : 0.0)
+        } else {
+            standingScore += zWeight * 0.5
+        }
+        totalWeight += zWeight
+        
+        // Movement variance (30% weight)
+        let movementWeight = 0.3
+        if features.movementVariance > 0.02 {
+            standingScore += movementWeight * 1.0
+        } else if features.movementVariance < 0.005 {
+            standingScore += movementWeight * 0.0
+        } else {
+            standingScore += movementWeight * 0.5
+        }
+        totalWeight += movementWeight
+        
+        // Y-axis arm angle (20% weight)
+        let yWeight = 0.2
+        if abs(features.yMean) > 0.3 {
+            standingScore += yWeight * 1.0
+        } else {
+            standingScore += yWeight * 0.2
+        }
+        totalWeight += yWeight
+        
+        // Range of motion (10% weight)
+        let rangeWeight = 0.1
+        let totalRange = features.xRange + features.yRange + features.zRange
+        if totalRange > 0.8 {
+            standingScore += rangeWeight * 1.0
+        } else if totalRange < 0.2 {
+            standingScore += rangeWeight * 0.0
+        } else {
+            standingScore += rangeWeight * 0.5
+        }
+        totalWeight += rangeWeight
+        
+        let normalizedScore = standingScore / totalWeight
+        let confidence = abs(normalizedScore - 0.5) * 2.0
+        
+        return (standing: normalizedScore > 0.5, confidence: confidence)
+    }
+    
+    // Feature structure
+    private struct PostureFeatures {
+        let xMean, yMean, zMean: Double
+        let xVariance, yVariance, zVariance: Double
+        let movementMean, movementVariance: Double
+        let xRange, yRange, zRange: Double
+    }
+    
+    private func calculateVariance(_ samples: [Double]) -> Double {
+        guard samples.count > 1 else { return 0 }
+        let mean = samples.reduce(0, +) / Double(samples.count)
+        let squaredDifferences = samples.map { pow($0 - mean, 2) }
+        return squaredDifferences.reduce(0, +) / Double(samples.count - 1)
     }
     
     private func startStandingDetection() {
@@ -1160,6 +1469,7 @@ extension HeartRateManager {
 
 // MARK: - HKLiveWorkoutBuilderDelegate
 
+#if os(watchOS)
 extension HeartRateManager: HKLiveWorkoutBuilderDelegate {
     func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {
         // Handle workout events if needed
@@ -1169,3 +1479,4 @@ extension HeartRateManager: HKLiveWorkoutBuilderDelegate {
         // Data collection handled by the anchored object query
     }
 }
+#endif

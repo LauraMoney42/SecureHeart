@@ -45,6 +45,46 @@
     "swift-dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SimpleContentView.swiftdeps",
     "swiftmodule" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SimpleContentView~partial.swiftmodule"
   },
+  "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart/Views/ExportView.swift" : {
+    "const-values" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView.swiftconstvalues",
+    "dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView.d",
+    "diagnostics" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView.dia",
+    "index-unit-output-path" : "/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView.o",
+    "llvm-bc" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView.bc",
+    "object" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView.o",
+    "swift-dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView.swiftdeps",
+    "swiftmodule" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/ExportView~partial.swiftmodule"
+  },
+  "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart/Views/HeartRateCard.swift" : {
+    "const-values" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard.swiftconstvalues",
+    "dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard.d",
+    "diagnostics" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard.dia",
+    "index-unit-output-path" : "/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard.o",
+    "llvm-bc" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard.bc",
+    "object" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard.o",
+    "swift-dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard.swiftdeps",
+    "swiftmodule" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HeartRateCard~partial.swiftmodule"
+  },
+  "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart/Views/HistoryView.swift" : {
+    "const-values" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView.swiftconstvalues",
+    "dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView.d",
+    "diagnostics" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView.dia",
+    "index-unit-output-path" : "/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView.o",
+    "llvm-bc" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView.bc",
+    "object" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView.o",
+    "swift-dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView.swiftdeps",
+    "swiftmodule" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/HistoryView~partial.swiftmodule"
+  },
+  "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart/Views/SettingsView.swift" : {
+    "const-values" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView.swiftconstvalues",
+    "dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView.d",
+    "diagnostics" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView.dia",
+    "index-unit-output-path" : "/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView.o",
+    "swift-dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView.swiftdeps",
+    "swiftmodule" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/SettingsView~partial.swiftmodule"
+  },
   "/Users/lauramoney/Documents/GIT/SecureHeart/SecureHeart/WatchConnectivityManager.swift" : {
     "const-values" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/WatchConnectivityManager.swiftconstvalues",
     "dependencies" : "/Users/lauramoney/Documents/GIT/SecureHeart/build/SecureHeart.build/Debug-iphoneos/Secure Heart.build/Objects-normal/arm64/WatchConnectivityManager.d",

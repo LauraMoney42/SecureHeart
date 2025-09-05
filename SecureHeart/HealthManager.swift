@@ -75,8 +75,8 @@ struct OrthostaticEvent: Identifiable {
     }
     
     var clinicalSummary: String {
-        let potsIndicator = sustainedDuration >= 600 && increase >= 30 ? " [POTS Pattern]" : ""
-        return "Peak: +\(increase) BPM, Sustained: \(Int(sustainedDuration))s\(potsIndicator)"
+        let severityIndicator = sustainedDuration >= 600 && increase >= 30 ? " [Sustained Response]" : ""
+        return "Peak: +\(increase) BPM, Sustained: \(Int(sustainedDuration))s\(severityIndicator)"
     }
     
     var sustainedMinutes: String {
@@ -115,23 +115,81 @@ class HealthManager: ObservableObject {
     @Published var liveHeartRate: Int = 0  // Real-time from watch
     @Published var heartRateDelta: Int = 0  // Change from previous reading
     @Published var recentAverageHeartRate: Int = 0  // 5-minute moving average
-    @Published var deltaFromAverage: Int = 0  // Current HR vs Recent Average (for POTS monitoring)
+    @Published var deltaFromAverage: Int = 0  // Current HR vs Recent Average (for standing response monitoring)
     @Published var orthostaticEvents: [OrthostaticEvent] = [] // Orthostatic events from watch
     
     init() {
+        // COMMENTED OUT FOR REAL DEVICE TESTING
         // Generate comprehensive medical test data
-        generateRealisticMedicalTestData()
+        // generateRealisticMedicalTestData()
         
-        // Update current stats
-        currentHeartRate = heartRateHistory.last?.heartRate ?? 72
-        lastUpdated = "Just now"
+        // Update current stats - start with 0 for real data
+        currentHeartRate = 0  // Will be populated by real heart rate data
+        lastUpdated = "Waiting for data..."
+        
+        // Listen for heart rate updates from Apple Watch
+        setupWatchConnectivityListeners()
     }
     
-    // MARK: - Simplified Request Authorization 
+    private func setupWatchConnectivityListeners() {
+        print("📱 [iPhone] Setting up WatchConnectivity listeners in HealthManager")
+        
+        // Listen for heart rate updates
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("HeartRateUpdated"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let heartRate = notification.userInfo?["heartRate"] as? Int {
+                print("📱 [iPhone] HealthManager received heart rate: \(heartRate)")
+                self?.updateHeartRateFromWatch(heartRate)
+            }
+        }
+        
+        // Listen for heart rate delta updates
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("HeartRateDeltaUpdated"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let delta = notification.userInfo?["delta"] as? Int {
+                print("📱 [iPhone] HealthManager received delta: \(delta)")
+                self?.deltaFromAverage = delta
+            }
+        }
+    }
+    
+    private func updateHeartRateFromWatch(_ heartRate: Int) {
+        print("📱 [iPhone] Updating UI with Watch heart rate: \(heartRate)")
+        
+        // Update current heart rate
+        currentHeartRate = heartRate
+        liveHeartRate = heartRate
+        lastUpdated = "Just now"
+        
+        // Add to history
+        let entry = HeartRateEntry(
+            heartRate: heartRate,
+            date: Date(),
+            delta: deltaFromAverage,
+            context: "From Apple Watch"
+        )
+        heartRateHistory.append(entry)
+        
+        // Limit history size
+        if heartRateHistory.count > 100 {
+            heartRateHistory.removeFirst()
+        }
+        
+        print("📱 [iPhone] UI updated - current HR: \(currentHeartRate), history count: \(heartRateHistory.count)")
+    }
+    
+    // MARK: - Request Authorization for Real Device
     func requestAuthorization() {
-        // Simplified for testing - just set to false
+        // For real device testing - iPhone will receive data from Watch via WatchConnectivity
+        // No direct HealthKit access needed on iPhone, just mark as authorized for UI
         DispatchQueue.main.async {
-            self.isAuthorized = false
+            self.isAuthorized = true
         }
     }
     
@@ -176,7 +234,7 @@ class HealthManager: ObservableObject {
         case 9...11: return Int.random(in: 70...80)   // Work
         case 12: return Int.random(in: 85...105)      // Lunch activity
         case 13...16: return Int.random(in: 68...78)  // Afternoon
-        case 17: return Int.random(in: 140...165)     // Exercise spike
+        case 17: return Int.random(in: 110...130)     // Exercise spike (moderated for demo)
         case 18: return Int.random(in: 85...100)      // Recovery - FIXED range
         case 19...21: return Int.random(in: 70...80)  // Evening
         case 22...23: return Int.random(in: 60...70)  // Pre-sleep
@@ -228,7 +286,7 @@ class HealthManager: ObservableObject {
     
     // MARK: - Delta Monitoring Helpers
     func isDeltaSignificant() -> Bool {
-        return abs(deltaFromAverage) >= 30  // POTS threshold
+        return abs(deltaFromAverage) >= 30  // Standing response threshold
     }
     
     func getDeltaDescription() -> String {
@@ -252,9 +310,9 @@ class HealthManager: ObservableObject {
             return .secondary
         }
         
-        // For POTS monitoring: increases are more concerning than decreases
+        // For standing response monitoring: increases are more concerning than decreases
         if deltaFromAverage >= 30 {
-            return .red  // Potential POTS response
+            return .red  // Potential standing response
         } else if deltaFromAverage <= -30 {
             return .orange  // Significant drop
         } else {
@@ -321,19 +379,19 @@ class HealthManager: ObservableObject {
         
         // Check for specific medical events
         
-        // 1. TACHYCARDIA EPISODES - Sustained high heart rate
+        // 1. TACHYCARDIA EPISODES - Sustained high heart rate (moderated for demo)
         if shouldGenerateTachycardiaEvent(hour: hour, minute: minute, timeHash: timeHash) {
-            let tachyHeartRate = Int.random(in: 155...185)
+            let tachyHeartRate = Int.random(in: 125...145) // Reduced from 155-185
             let delta = tachyHeartRate - baseline
-            let duration = Int.random(in: 8...25) // 8-25 minutes
-            return (tachyHeartRate, "Standing - Tachycardia episode", delta)
+            let _ = Int.random(in: 8...25) // 8-25 minutes (unused for now)
+            return (tachyHeartRate, "Standing - Elevated episode", delta)
         }
         
-        // 2. BRADYCARDIA EPISODES - Sustained low heart rate  
+        // 2. BRADYCARDIA EPISODES - Sustained low heart rate (moderated for demo)
         if shouldGenerateBradycardiaEvent(hour: hour, minute: minute, timeHash: timeHash) {
-            let bradyHeartRate = Int.random(in: 35...48)
+            let bradyHeartRate = Int.random(in: 50...58) // Raised from 35-48
             let delta = bradyHeartRate - baseline
-            return (bradyHeartRate, "Sitting - Bradycardia", delta)
+            return (bradyHeartRate, "Sitting - Low HR", delta)
         }
         
         // 3. ARRHYTHMIA PATTERNS - Irregular rhythms
@@ -344,9 +402,9 @@ class HealthManager: ObservableObject {
             return (boundedRate, "Irregular rhythm detected", delta)
         }
         
-        // 4. ORTHOSTATIC/POTS EVENTS - Standing transitions
+        // 4. ORTHOSTATIC EVENTS - Standing transitions (moderated for demo)
         if shouldGenerateOrthostaticEvent(hour: hour, minute: minute, timeHash: timeHash) {
-            let orthoHeartRate = baseline + Int.random(in: 35...65) // POTS criteria: +30 BPM or more
+            let orthoHeartRate = baseline + Int.random(in: 25...45) // Reduced from 35-65
             let delta = orthoHeartRate - baseline
             return (orthoHeartRate, "Standing +\(delta)BPM", delta)
         }

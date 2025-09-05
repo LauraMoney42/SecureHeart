@@ -30,7 +30,7 @@ class WatchConnectivityManager: NSObject, ObservableObject {
     }
     
     // Send heart rate update to iPhone
-    func sendHeartRateUpdate(heartRate: Int, delta: Int = 0) {
+    func sendHeartRateUpdate(heartRate: Int, delta: Int = 0, isStanding: Bool? = nil) {
         guard let session = session else { 
             print("🔴 [WATCH] No WCSession available")
             return 
@@ -45,11 +45,17 @@ class WatchConnectivityManager: NSObject, ObservableObject {
         lastSentHeartRate = heartRate
         lastSentTime = now
         
-        let message: [String: Any] = [
+        var message: [String: Any] = [
             "heartRate": heartRate,
             "heartRateDelta": delta,
             "timestamp": now
         ]
+        
+        // Add posture data if available
+        if let isStanding = isStanding {
+            message["isStanding"] = isStanding
+            message["posture"] = isStanding ? "Standing" : "Sitting"
+        }
         
         print("💓 [WATCH] Sending heart rate: \(heartRate) BPM, delta: \(delta)")
         print("🔗 [WATCH] Session reachable: \(session.isReachable)")
@@ -136,14 +142,16 @@ class WatchConnectivityManager: NSObject, ObservableObject {
 extension WatchConnectivityManager: WCSessionDelegate {
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         DispatchQueue.main.async {
-            self.isPhoneConnected = (activationState == .activated && session.isCompanionAppInstalled)
+            self.isPhoneConnected = (activationState == .activated)
         }
         
         if let error = error {
             print("🔴 [WATCH] WCSession activation failed: \(error.localizedDescription)")
         } else {
             print("✅ [WATCH] WCSession activated with state: \(activationState.rawValue)")
+            #if os(watchOS)
             print("📱 [WATCH] Companion app installed: \(session.isCompanionAppInstalled)")
+            #endif
             print("🔗 [WATCH] Session reachable: \(session.isReachable)")
         }
     }
@@ -176,4 +184,14 @@ extension WatchConnectivityManager: WCSessionDelegate {
             }
         }
     }
+    
+    #if os(iOS)
+    func sessionDidBecomeInactive(_ session: WCSession) {
+        print("🔶 [WATCH] WCSession became inactive")
+    }
+    
+    func sessionDidDeactivate(_ session: WCSession) {
+        print("🔶 [WATCH] WCSession deactivated")
+    }
+    #endif
 }

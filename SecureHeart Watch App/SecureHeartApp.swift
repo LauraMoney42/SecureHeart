@@ -6,9 +6,6 @@
 //
 
 import SwiftUI
-#if canImport(WatchKit)
-import WatchKit
-#endif
 
 @main
 struct SecureHeartWatchApp: App {
@@ -18,8 +15,8 @@ struct SecureHeartWatchApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(heartRateManager)
-                .onReceive(NotificationCenter.default.publisher(for: WKExtension.applicationDidBecomeActiveNotification)) { _ in
-                    // Resume monitoring when app becomes active
+                .onAppear {
+                    // Resume monitoring when app appears
                     heartRateManager.resumeMonitoringIfNeeded()
                 }
         }
