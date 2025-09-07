@@ -384,14 +384,14 @@ class HealthManager: ObservableObject {
             let tachyHeartRate = Int.random(in: 125...145) // Reduced from 155-185
             let delta = tachyHeartRate - baseline
             let _ = Int.random(in: 8...25) // 8-25 minutes (unused for now)
-            return (tachyHeartRate, "Standing - Elevated episode", delta)
+            return (tachyHeartRate, "Elevated episode", delta) // Removed "Standing" for MVP2
         }
         
         // 2. BRADYCARDIA EPISODES - Sustained low heart rate (moderated for demo)
         if shouldGenerateBradycardiaEvent(hour: hour, minute: minute, timeHash: timeHash) {
             let bradyHeartRate = Int.random(in: 50...58) // Raised from 35-48
             let delta = bradyHeartRate - baseline
-            return (bradyHeartRate, "Sitting - Low HR", delta)
+            return (bradyHeartRate, "Low HR", delta) // Removed "Sitting" for MVP2
         }
         
         // 3. ARRHYTHMIA PATTERNS - Irregular rhythms
@@ -406,14 +406,14 @@ class HealthManager: ObservableObject {
         if shouldGenerateOrthostaticEvent(hour: hour, minute: minute, timeHash: timeHash) {
             let orthoHeartRate = baseline + Int.random(in: 25...45) // Reduced from 35-65
             let delta = orthoHeartRate - baseline
-            return (orthoHeartRate, "Standing +\(delta)BPM", delta)
+            return (orthoHeartRate, "Elevated +\(delta)BPM", delta) // Removed "Standing" for MVP2
         }
         
         // 5. SITTING RECOVERY EVENTS
         if shouldGenerateSittingEvent(hour: hour, minute: minute, timeHash: timeHash) {
             let sittingRate = max(50, baseline - Int.random(in: 15...35))
             let delta = sittingRate - baseline
-            return (sittingRate, "Sitting \(delta)BPM", delta)
+            return (sittingRate, "Recovery \(delta)BPM", delta) // Removed "Sitting" for MVP2
         }
         
         // 6. NORMAL VARIATIONS with activity context
@@ -422,8 +422,9 @@ class HealthManager: ObservableObject {
         let finalRate = max(45, min(150, normalRate + variation))
         let delta = finalRate - baseline
         
-        // Add occasional activity context to normal readings
-        let context: String? = timeHash % 15 == 0 ? (finalRate > 90 ? "Standing" : "Sitting") : nil
+        // Add occasional activity context to normal readings - Commented out for MVP2
+        // let context: String? = timeHash % 15 == 0 ? (finalRate > 90 ? "Standing" : "Sitting") : nil
+        let context: String? = nil // No posture context for MVP2
         
         return (finalRate, context, delta)
     }

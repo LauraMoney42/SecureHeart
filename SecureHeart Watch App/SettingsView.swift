@@ -14,6 +14,7 @@ struct SettingsView: View {
     @ObservedObject var heartRateManager: HeartRateManager
     @AppStorage("selectedColorTheme") private var selectedColorTheme = 0
     @AppStorage("recordingInterval") private var recordingInterval = 60.0
+    @AppStorage("showTimeOnWatch") private var showTimeOnWatch = true
     
     private let colorThemes: [ColorTheme] = [
         ColorTheme(
@@ -145,6 +146,13 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Time display toggle
+                    HStack {
+                        Image(systemName: "clock")
+                            .foregroundColor(.purple)
+                            .frame(width: 24)
+                        Toggle("Show Theme Time", isOn: $showTimeOnWatch)
+                    }
                 }
                 
                 Section("Data") {
@@ -170,6 +178,8 @@ struct SettingsView: View {
                     }
                 }
                 
+                // Section("Debug - Posture Detection") - Commented out for MVP2
+                /*
                 Section("Debug - Posture Detection") {
                     // Current posture status
                     HStack {
@@ -213,6 +223,7 @@ struct SettingsView: View {
                         }
                     }
                 }
+                */
                 
                 Section("Info") {
                     NavigationLink(destination: AboutView()) {
@@ -241,7 +252,47 @@ struct ThemesView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("Color Themes")
+                Text("Themes")
+                    .font(.headline)
+                    .padding(.top)
+                
+                // Background selector - first option
+                NavigationLink(destination: BackgroundThemeView()) {
+                    HStack {
+                        Image(systemName: "paintpalette.fill")
+                            .foregroundColor(.orange)
+                            .frame(width: 24)
+                        Text("Background")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 14))
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(10)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // BPM text color selector - second option
+                NavigationLink(destination: BPMTextColorView()) {
+                    HStack {
+                        Image(systemName: "textformat.123")
+                            .foregroundColor(.blue)
+                            .frame(width: 24)
+                        Text("BPM Text Color")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 14))
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(10)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Text("Heart Rate Colors")
                     .font(.headline)
                     .padding(.top)
                 
@@ -321,7 +372,8 @@ struct HistoryView: View {
                             .foregroundColor(.white)
                             .frame(width: 45, alignment: .leading)
                         
-                        // Sitting/Standing icon
+                        // Sitting/Standing icon - Commented out for MVP2
+                        /*
                         if let context = reading.context {
                             Image(systemName: context.contains("Standing") ? "figure.stand" : "figure.seated.side")
                                 .font(.system(size: 8))
@@ -333,6 +385,7 @@ struct HistoryView: View {
                                 .foregroundColor(.gray)
                                 .frame(width: 12, alignment: .center)
                         }
+                        */
                         
                         // Delta indicator  
                         if !reading.deltaText.isEmpty {
@@ -517,7 +570,20 @@ struct CustomColorPickerView: View {
     let presetColors: [Color] = [
         .red, .orange, .yellow, .green, .mint, .teal,
         .cyan, .blue, .indigo, .purple, .pink, .brown,
-        .white, .gray, .black
+        .white, .gray, .black,
+        // Sunset Terra palette
+        Color(hex: "#F9EEE2") ?? .white, // Cream
+        Color(hex: "#FFC8BC") ?? .pink,  // Coral Pink
+        Color(hex: "#DDB398") ?? .brown, // Warm Brown
+        Color(hex: "#F8E0D2") ?? .pink,  // Peachy Cream
+        Color(hex: "#F8C5AD") ?? .orange, // Salmon
+        // Gelato Days palette
+        Color(hex: "#FFCBC1") ?? .pink,  // Soft Coral
+        Color(hex: "#9DE550") ?? .green, // Lime Green
+        Color(hex: "#FFE1A8") ?? .yellow, // Pale Yellow
+        Color(hex: "#8CD9EC") ?? .cyan,  // Sky Blue
+        Color(hex: "#DCC6EC") ?? .purple, // Lavender
+        Color(hex: "#FFD084") ?? .orange // Peach
     ]
     
     var body: some View {
@@ -673,6 +739,150 @@ extension Color {
         let g = Float(components[1])
         let b = Float(components[2])
         return String(format: "#%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
+    }
+}
+
+// MARK: - BPM Text Color View
+struct BPMTextColorView: View {
+    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 12 // Default to white
+    
+    // All the same colors as background picker
+    let bpmTextColors: [Color] = [
+        // Row 1: Primary colors
+        .red, .orange, .yellow, .green, .mint,
+        
+        // Row 2: Blues and purples  
+        .teal, .cyan, .blue, Color(red: 0.7, green: 0.5, blue: 1.0), .purple,
+        
+        // Row 3: Neutrals and basics
+        Color(red: 1.0, green: 0.2, blue: 0.4), // Hot pink
+        .brown, .white, .gray, .black,
+        
+        // Row 4: Sunset Terra palette
+        Color(red: 0.98, green: 0.93, blue: 0.89), // Cream
+        Color(red: 1.0, green: 0.78, blue: 0.74),  // Coral Pink
+        Color(red: 0.87, green: 0.70, blue: 0.60), // Warm Brown
+        Color(red: 0.97, green: 0.88, blue: 0.82), // Peachy Cream
+        Color(red: 0.97, green: 0.77, blue: 0.68), // Salmon
+        
+        // Row 5: Gelato Days palette
+        Color(red: 1.0, green: 0.80, blue: 0.76),  // Soft Coral
+        Color(red: 0.62, green: 0.90, blue: 0.31), // Lime Green
+        Color(red: 1.0, green: 0.88, blue: 0.66),  // Pale Yellow
+        Color(red: 0.55, green: 0.85, blue: 0.93), // Sky Blue
+        Color(red: 0.86, green: 0.78, blue: 0.93)  // Lavender
+    ]
+    
+    var currentBPMTextColor: Color {
+        if selectedBPMTextColor < bpmTextColors.count {
+            return bpmTextColors[selectedBPMTextColor]
+        }
+        return .white
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("BPM Text Colors")
+                    .font(.headline)
+                    .padding(.top)
+                
+                // BPM text color picker row
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("BPM Number Color")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        Circle()
+                            .fill(currentBPMTextColor)
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                    }
+                    
+                    // Color grid (exactly like Custom color picker)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
+                        ForEach(Array(bpmTextColors.enumerated()), id: \.offset) { index, color in
+                            Circle()
+                                .fill(color)
+                                .frame(width: 30, height: 30)
+                                .overlay(
+                                    Circle()
+                                        .stroke(selectedBPMTextColor == index ? Color.white : Color.white.opacity(0.3), 
+                                               lineWidth: selectedBPMTextColor == index ? 2 : 1)
+                                )
+                                .scaleEffect(selectedBPMTextColor == index ? 1.1 : 1.0)
+                                .animation(.easeInOut(duration: 0.2), value: selectedBPMTextColor == index)
+                                .onTapGesture {
+                                    selectedBPMTextColor = index
+                                }
+                        }
+                    }
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.black.opacity(0.3))
+                )
+                
+                // Preview section
+                VStack(spacing: 8) {
+                    Text("Preview")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    VStack(spacing: 2) {
+                        Text("95")
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(currentBPMTextColor)
+                        
+                        Text("BPM")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(currentBPMTextColor.opacity(0.8))
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.2))
+                    )
+                }
+                .padding(.top)
+                
+                // Tips section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Tips:")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .fontWeight(.semibold)
+                    
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                            .foregroundColor(.gray)
+                        Text("Choose colors that contrast well with your background")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                            .foregroundColor(.gray)
+                        Text("White works best on dark backgrounds, black on light ones")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+            }
+            .padding(.horizontal)
+        }
+        .navigationTitle("BPM Text Color")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

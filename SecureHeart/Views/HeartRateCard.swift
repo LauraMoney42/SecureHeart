@@ -47,20 +47,20 @@ struct HeartRateCard: View {
                         .padding(.bottom, 8)
                 }
                 
-                // Status (Sitting/Standing or zone)
+                // Status (Heart Rate Zone) - Posture display commented out for MVP2
                 VStack(alignment: .leading, spacing: 4) {
-                    if let recentEntry = healthManager.heartRateHistory.first,
-                       let context = recentEntry.context {
-                        Text(context.contains("Standing") ? "Standing" : "Sitting")
+                    // if let recentEntry = healthManager.heartRateHistory.first,
+                    //    let context = recentEntry.context {
+                    //     Text(context.contains("Standing") ? "Standing" : "Sitting")
+                    //         .font(.subheadline)
+                    //         .fontWeight(.medium)
+                    //         .foregroundColor(.primary)
+                    // } else {
+                        Text(getZoneText())
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundColor(.primary)
-                    } else {
-                        Text("--")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.secondary)
-                    }
+                            .foregroundColor(getZoneColor())
+                    // }
                     
                     
                     // Live indicator if applicable

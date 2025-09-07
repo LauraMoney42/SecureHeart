@@ -7,14 +7,18 @@
 
 import Foundation
 import HealthKit
-import WidgetKit
 import CoreMotion
 #if canImport(WatchKit)
 import WatchKit
 #endif
 
 class HeartRateManager: NSObject, ObservableObject {
-    private let healthStore = HKHealthStore()
+    static let sharedInstance = HeartRateManager()
+    static var shared: HeartRateManager? {
+        return sharedInstance
+    }
+    
+    let healthStore = HKHealthStore()
     private var heartRateQuery: HKAnchoredObjectQuery?
     private let heartRateQuantityType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
     
@@ -636,6 +640,7 @@ class HeartRateManager: NSObject, ObservableObject {
         // Data only flows: Watch Sensors → Watch App → iPhone App (via WatchConnectivity)
         
         print("📋 [WATCH] Requesting HealthKit authorization...")
+        print("🔍 [WATCH] HealthKit available: \(HKHealthStore.isHealthDataAvailable())")
         
         let typesToRead: Set = [heartRateQuantityType]
         
@@ -664,7 +669,6 @@ class HeartRateManager: NSObject, ObservableObject {
         guard isAuthorized, !isMonitoring else { return }
         startMonitoring()
         enableBackgroundDelivery()
-        scheduleComplicationUpdates()
     }
     
     func fetchLatestHeartRate() {
@@ -941,24 +945,6 @@ class HeartRateManager: NSObject, ObservableObject {
         #endif
     }
     
-    // MARK: - Complication Support
-    
-    func getLatestHeartRateForComplication() -> Int {
-        return currentHeartRate
-    }
-    
-    func getHeartRateColor() -> String {
-        if currentHeartRate < 80 {
-            return "blue"
-        } else if currentHeartRate >= 80 && currentHeartRate <= 120 {
-            return "green"
-        } else if currentHeartRate > 120 && currentHeartRate <= 150 {
-            return "yellow"
-        } else {
-            return "red"
-        }
-    }
-    
     // MARK: - Enhanced Watch Face Integration
     
     func enableHighFrequencyUpdates() {
@@ -967,21 +953,6 @@ class HeartRateManager: NSObject, ObservableObject {
         startWorkoutSession()
     }
     
-    func updateComplicationsIfNeeded() {
-        // Force complication updates when heart rate changes significantly
-        if abs(heartRateDelta) >= 10 {
-            WidgetCenter.shared.reloadAllTimelines()
-        }
-    }
-    
-    private func scheduleComplicationUpdates() {
-        // Schedule regular complication updates every 15 seconds for TachyMon-like responsiveness
-        Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { _ in
-            DispatchQueue.main.async {
-                self.updateComplicationsIfNeeded()
-            }
-        }
-    }
     
     // MARK: - Background Monitoring Support
     

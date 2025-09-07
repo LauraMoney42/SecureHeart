@@ -12,8 +12,8 @@ enum HistorySortOption: String, CaseIterable {
     case oldestFirst = "Oldest First"
     case heartRateHigh = "Heart Rate (High to Low)"
     case heartRateLow = "Heart Rate (Low to High)"
-    case standingOnly = "Standing Only"
-    case sittingOnly = "Sitting Only"
+    // case standingOnly = "Standing Only" // Commented out for MVP2
+    // case sittingOnly = "Sitting Only" // Commented out for MVP2
 }
 
 struct HistoryTabView: View {
@@ -32,14 +32,14 @@ struct HistoryTabView: View {
             return healthManager.heartRateHistory.sorted { $0.heartRate > $1.heartRate }
         case .heartRateLow:
             return healthManager.heartRateHistory.sorted { $0.heartRate < $1.heartRate }
-        case .standingOnly:
-            return healthManager.heartRateHistory.filter { entry in
-                entry.context?.contains("Standing") ?? false
-            }.sorted { $0.date > $1.date }
-        case .sittingOnly:
-            return healthManager.heartRateHistory.filter { entry in
-                entry.context?.contains("Sitting") ?? false || entry.context == nil
-            }.sorted { $0.date > $1.date }
+        // case .standingOnly: // Commented out for MVP2
+        //     return healthManager.heartRateHistory.filter { entry in
+        //         entry.context?.contains("Standing") ?? false
+        //     }.sorted { $0.date > $1.date }
+        // case .sittingOnly: // Commented out for MVP2
+        //     return healthManager.heartRateHistory.filter { entry in
+        //         entry.context?.contains("Sitting") ?? false || entry.context == nil
+        //     }.sorted { $0.date > $1.date }
         }
     }
     
@@ -124,11 +124,12 @@ struct HeartRateHistoryRow: View {
             Text("\(entry.heartRate) BPM")
                 .font(.headline)
             
-            if let context = entry.context {
-                Text(context.contains("Standing") ? "Standing" : "Sitting")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            // Posture context commented out for MVP2
+            // if let context = entry.context {
+            //     Text(context.contains("Standing") ? "Standing" : "Sitting")
+            //         .font(.caption)
+            //         .foregroundColor(.secondary)
+            // }
             
             Spacer()
             

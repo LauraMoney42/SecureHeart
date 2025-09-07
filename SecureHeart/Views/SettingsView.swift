@@ -118,7 +118,8 @@ struct AboutView: View {
                         BulletPoint("Warns you when your heart rate goes up or down by 30 beats per minute")
                         BulletPoint("Alerts you if your heart rate gets too high or too low")
                         BulletPoint("Makes easy-to-read charts of your heart data")
-                        BulletPoint("Great for people with standing response patterns and other heart conditions")
+                        // BulletPoint("Great for people with standing response patterns and other heart conditions") // Commented out for MVP2
+                        BulletPoint("Great for people with heart rate monitoring needs and other heart conditions")
                     }
                 }
                 

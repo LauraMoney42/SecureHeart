@@ -55,8 +55,8 @@ struct DashboardView: View {
                     // Heart Rate Card
                     HeartRateCard(healthManager: healthManager)
                     
-                    // Delta Monitoring Card (Standing Response)
-                    DeltaMonitoringCard(healthManager: healthManager)
+                    // Delta Monitoring Card (Standing Response) - Commented out for MVP2
+                    // DeltaMonitoringCard(healthManager: healthManager)
                     
                     // Quick Stats
                     QuickStatsView(healthManager: healthManager)
@@ -80,7 +80,8 @@ struct DashboardView: View {
     }
 }
 
-// MARK: - Delta Monitoring Card (Standing Response)
+// MARK: - Delta Monitoring Card (Standing Response) - Commented out for MVP2
+/*
 struct DeltaMonitoringCard: View {
     @ObservedObject var healthManager: HealthManager
     
@@ -173,6 +174,7 @@ struct DeltaMonitoringCard: View {
         .shadow(color: Color.primary.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
+*/
 
 // MARK: - Heart Rate Zone Indicator
 struct HeartRateZoneIndicator: View {
@@ -319,9 +321,9 @@ struct OrthosticVitalSignsChart: View {
                 Text("Orthostatic Vital Signs")
                     .font(.headline)
                 Spacer()
-                Text("Supine → Standing")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                // Text("Supine → Standing") - Commented out for MVP2
+                //     .font(.caption)
+                //     .foregroundColor(.secondary)
             }
             .padding(.horizontal)
             
@@ -468,7 +470,8 @@ struct OrthosticChartContent: View {
                         }
                         .stroke(Color.blue, lineWidth: 2)
                         
-                        // Standing HR line
+                        // Standing HR line - Commented out for MVP2
+                        /*
                         Path { path in
                             for (index, dataPoint) in orthostaticTestData.enumerated() {
                                 let x = width * CGFloat(index) / CGFloat(max(orthostaticTestData.count - 1, 1))
@@ -482,6 +485,7 @@ struct OrthosticChartContent: View {
                             }
                         }
                         .stroke(Color.red, lineWidth: 2)
+                        */
                         
                         // Data points
                         ForEach(Array(orthostaticTestData.enumerated()), id: \.offset) { index, dataPoint in
@@ -489,11 +493,13 @@ struct OrthosticChartContent: View {
                             let standingY = height * (1 - CGFloat(dataPoint.standingHR - minHR) / CGFloat(range))
                             let supineY = height * (1 - CGFloat(dataPoint.supineHR - minHR) / CGFloat(range))
                             
-                            // Standing point
+                            // Standing point - Commented out for MVP2
+                            /*
                             Circle()
                                 .fill(dataPoint.delta >= 30 ? Color.orange : Color.red)
                                 .frame(width: 6, height: 6)
                                 .position(x: x, y: standingY)
+                            */
                             
                             // Supine point
                             Circle()
@@ -600,10 +606,10 @@ struct OrthosticChartContent: View {
                     Circle().fill(Color.blue).frame(width: 8, height: 8)
                     Text("Supine").font(.system(size: 10)).foregroundColor(.secondary)
                 }
-                HStack(spacing: 4) {
-                    Circle().fill(Color.red).frame(width: 8, height: 8)
-                    Text("Standing").font(.system(size: 10)).foregroundColor(.secondary)
-                }
+                // HStack(spacing: 4) { // Commented out for MVP2
+                //     Circle().fill(Color.red).frame(width: 8, height: 8)
+                //     Text("Standing").font(.system(size: 10)).foregroundColor(.secondary)
+                // }
                 HStack(spacing: 4) {
                     Rectangle().fill(Color.orange).frame(width: 12, height: 1)
                     Text("Threshold Criteria").font(.system(size: 10)).foregroundColor(.secondary)

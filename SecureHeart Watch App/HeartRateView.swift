@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HeartRateView: View {
     @EnvironmentObject var heartRateManager: HeartRateManager
+    @Environment(\.isLuminanceReduced) var isLuminanceReduced
     @State private var pulseAnimation = false
     @State private var crownValue: Double = 0
     @State private var isAlwaysOnDisplay = false
@@ -16,10 +17,13 @@ struct HeartRateView: View {
     @State private var showingSettings = false
     @State private var historyOffset: CGFloat = 0
     
-    @AppStorage("selectedColorTheme") private var selectedColorTheme = 3
+    @AppStorage("selectedColorTheme") private var selectedColorTheme = 0
     @AppStorage("selectedWatchFace") private var selectedWatchFace = 0
     @AppStorage("alwaysOnEnabled") private var alwaysOnEnabled = true
     @AppStorage("digitalCrownSensitivity") private var digitalCrownSensitivity = 1.0
+    @AppStorage("showTimeOnWatch") private var showTimeOnWatch = true
+    @AppStorage("watchFaceBackgroundColor") private var selectedBackgroundColor = 0 // 0=Black, 1=Off-white, 2+=Color themes
+    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 12 // Default to white
     
     // Custom theme colors stored as hex strings
     @AppStorage("customLowColor") private var customLowColorHex = "#007AFF" // Blue
@@ -163,6 +167,10 @@ struct HeartRateView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                // Background color
+                themeBackgroundColor
+                    .ignoresSafeArea()
+                
                 mainContentView
                     .gesture(swipeGesture) // Move gesture to mainContentView
                 alwaysOnOverlayView
@@ -172,6 +180,7 @@ struct HeartRateView: View {
             .navigationBarHidden(true)
             .ignoresSafeArea(.all)
             .onAppear {
+                print("❤️ HeartRateView appeared - forcing authorization")
                 pulseAnimation = true
                 setupAlwaysOnDisplay()
                 // Force start monitoring when view appears
@@ -209,6 +218,7 @@ struct HeartRateView: View {
             minimalThemeView.tag(2)
             chunkyThemeView.tag(3)
             numbersOnlyThemeView.tag(4)
+            watchFaceThemeView.tag(5)
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         .opacity(isAlwaysOnDisplay && alwaysOnEnabled ? 0.6 : 1.0)
@@ -342,10 +352,79 @@ struct HeartRateView: View {
         if alwaysOnEnabled {
             // Start more frequent updates for watch face integration
             heartRateManager.enableHighFrequencyUpdates()
+            
+            // Update always-on state based on luminance
+            isAlwaysOnDisplay = isLuminanceReduced
+            
+            // Prevent app from being interrupted by notifications
+            preventInterruptions()
         }
         
         // Ensure continuous monitoring is active (TachyMon style)
         heartRateManager.startContinuousMonitoring()
+        
+        // Monitor for always-on state changes
+        monitorAlwaysOnStateChanges()
+    }
+    
+    private func preventInterruptions() {
+        // Minimize interruptions in watch face mode (watchOS specific)
+        #if os(watchOS)
+        
+        // Monitor for app state changes
+        NotificationCenter.default.addObserver(
+            forName: .NSExtensionHostWillEnterForeground,
+            object: nil,
+            queue: .main
+        ) { _ in
+            // Immediately regain focus when returning from interruption
+            self.regainFocus()
+        }
+        
+        // Extended runtime session disabled to avoid entitlement errors
+        
+        #endif
+    }
+    
+    private func regainFocus() {
+        // Force the app back to the foreground
+        DispatchQueue.main.async {
+            // Watch face mode disabled
+        }
+    }
+    
+    private func monitorAlwaysOnStateChanges() {
+        // React to always-on display changes
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            let newAlwaysOnState = self.isLuminanceReduced
+            if newAlwaysOnState != self.isAlwaysOnDisplay {
+                self.isAlwaysOnDisplay = newAlwaysOnState
+                
+                if newAlwaysOnState {
+                    // Entering always-on mode - optimize for power saving
+                    self.optimizeForAlwaysOn()
+                } else {
+                    // Exiting always-on mode - restore full functionality
+                    self.restoreFullFunctionality()
+                }
+            }
+        }
+    }
+    
+    private func optimizeForAlwaysOn() {
+        // Reduce animation frequency for battery life
+        pulseAnimation = false
+        
+        // Use standard monitoring for battery efficiency in always-on mode
+        heartRateManager.startContinuousMonitoring()
+    }
+    
+    private func restoreFullFunctionality() {
+        // Restore normal operation when user interacts
+        pulseAnimation = true
+        
+        // Enable high frequency updates when actively used
+        heartRateManager.enableHighFrequencyUpdates()
     }
     
     private func detectAlwaysOnState() {
@@ -363,13 +442,13 @@ struct HeartRateView: View {
         if value >= threshold {
             // Move to next watch face
             withAnimation(.easeInOut(duration: 0.3)) {
-                selectedWatchFace = (selectedWatchFace + 1) % 5
+                selectedWatchFace = (selectedWatchFace + 1) % 6
             }
             crownValue = 0 // Reset
         } else if value <= -threshold {
             // Move to previous watch face
             withAnimation(.easeInOut(duration: 0.3)) {
-                selectedWatchFace = selectedWatchFace > 0 ? selectedWatchFace - 1 : 4
+                selectedWatchFace = selectedWatchFace > 0 ? selectedWatchFace - 1 : 5
             }
             crownValue = 0 // Reset
         }
@@ -451,14 +530,102 @@ struct HeartRateView: View {
         return heartRateColor // Now just use the same theme-based color
     }
     
-    private var heartRateTextColor: Color {
-        // For light-colored themes, use black text for better visibility
-        if selectedColorTheme == 2 || selectedColorTheme == 3 || selectedColorTheme == 5 || selectedColorTheme == 6 || selectedColorTheme == 7 || selectedColorTheme == 8 || selectedColorTheme == 9 || selectedColorTheme == 10 || selectedColorTheme == 12 { 
-            // Monochrome, Rainbow, Pastel Rainbow, Pastel, Pinks, Forest, Fire, Sunshine, Sunset
-            return .black
-        } else {
-            return .white // Default white text for dark themes (Classic, Pretty, Ocean, Midnight)
+    // All background colors matching the expanded BackgroundThemeView palette
+    private let allBackgroundColors: [Color] = [
+        // Row 1: Primary colors
+        .red, .orange, .yellow, .green, .mint,
+        
+        // Row 2: Blues and purples  
+        .teal, .cyan, .blue, Color(red: 0.7, green: 0.5, blue: 1.0), .purple,
+        
+        // Row 3: Neutrals and basics
+        Color(red: 1.0, green: 0.2, blue: 0.4), // Hot pink
+        .brown, .white, .gray, .black,
+        
+        // Row 4: Sunset Terra palette
+        Color(red: 0.98, green: 0.93, blue: 0.89), // Cream
+        Color(red: 1.0, green: 0.78, blue: 0.74),  // Coral Pink
+        Color(red: 0.87, green: 0.70, blue: 0.60), // Warm Brown
+        Color(red: 0.97, green: 0.88, blue: 0.82), // Peachy Cream
+        Color(red: 0.97, green: 0.77, blue: 0.68), // Salmon
+        
+        // Row 5: Gelato Days palette
+        Color(red: 1.0, green: 0.80, blue: 0.76),  // Soft Coral
+        Color(red: 0.62, green: 0.90, blue: 0.31), // Lime Green
+        Color(red: 1.0, green: 0.88, blue: 0.66),  // Pale Yellow
+        Color(red: 0.55, green: 0.85, blue: 0.93), // Sky Blue
+        Color(red: 0.86, green: 0.78, blue: 0.93)  // Lavender
+    ]
+    
+    // BPM text colors - same palette as background colors
+    private let allBPMTextColors: [Color] = [
+        // Row 1: Primary colors
+        .red, .orange, .yellow, .green, .mint,
+        
+        // Row 2: Blues and purples  
+        .teal, .cyan, .blue, Color(red: 0.7, green: 0.5, blue: 1.0), .purple,
+        
+        // Row 3: Neutrals and basics
+        Color(red: 1.0, green: 0.2, blue: 0.4), // Hot pink
+        .brown, .white, .gray, .black,
+        
+        // Row 4: Sunset Terra palette
+        Color(red: 0.98, green: 0.93, blue: 0.89), // Cream
+        Color(red: 1.0, green: 0.78, blue: 0.74),  // Coral Pink
+        Color(red: 0.87, green: 0.70, blue: 0.60), // Warm Brown
+        Color(red: 0.97, green: 0.88, blue: 0.82), // Peachy Cream
+        Color(red: 0.97, green: 0.77, blue: 0.68), // Salmon
+        
+        // Row 5: Gelato Days palette
+        Color(red: 1.0, green: 0.80, blue: 0.76),  // Soft Coral
+        Color(red: 0.62, green: 0.90, blue: 0.31), // Lime Green
+        Color(red: 1.0, green: 0.88, blue: 0.66),  // Pale Yellow
+        Color(red: 0.55, green: 0.85, blue: 0.93), // Sky Blue
+        Color(red: 0.86, green: 0.78, blue: 0.93)  // Lavender
+    ]
+    
+    // Background color based on theme selection
+    private var themeBackgroundColor: Color {
+        if selectedBackgroundColor < allBackgroundColors.count {
+            return allBackgroundColors[selectedBackgroundColor]
         }
+        return .black
+    }
+    
+    private var isLightBackground: Bool {
+        // Determine if current background is light and needs dark text
+        let lightBackgrounds: Set<Int> = [
+            2,  // Yellow
+            4,  // Mint
+            12, // White
+            15, // Cream
+            16, // Coral Pink
+            18, // Peachy Cream
+            19, // Salmon
+            20, // Soft Coral
+            22, // Pale Yellow
+            23, // Sky Blue
+            24  // Lavender
+        ]
+        return lightBackgrounds.contains(selectedBackgroundColor)
+    }
+    
+    // Dynamic text color based on background
+    private var themeTextColor: Color {
+        return isLightBackground ? .black : .white
+    }
+    
+    // Custom BPM text color based on user selection
+    private var customBPMTextColor: Color {
+        if selectedBPMTextColor < allBPMTextColors.count {
+            return allBPMTextColors[selectedBPMTextColor]
+        }
+        return .white
+    }
+    
+    private var heartRateTextColor: Color {
+        // Use the custom BPM text color instead of automatic theme text color
+        return customBPMTextColor
     }
     
     private var heartBeatDuration: Double {
@@ -519,7 +686,8 @@ struct HeartRateView: View {
                 .offset(x: 70, y: 15)
             }
             
-            // Posture indicator (top-left corner)
+            // Posture indicator (top-left corner) - Commented out for MVP2
+            /*
             VStack(spacing: 2) {
                 Image(systemName: heartRateManager.isStanding ? "figure.stand" : "figure.seated.side")
                     .font(.system(size: 12))
@@ -529,6 +697,7 @@ struct HeartRateView: View {
                     .foregroundColor(.white.opacity(0.7))
             }
             .offset(x: -70, y: -60)
+            */
         }
     }
     
@@ -590,56 +759,60 @@ struct HeartRateView: View {
     }
     
     private var minimalThemeView: some View {
-        VStack(spacing: 20) {
-            // Minimal - uses theme colors
-            if isRainbowTheme {
-                Text("\(heartRateManager.currentHeartRate)")
-                    .font(.system(size: 72, weight: .thin, design: .rounded))
-                    .foregroundStyle(rainbowGradient)
-            } else if isPastelRainbowTheme {
-                Text("\(heartRateManager.currentHeartRate)")
-                    .font(.system(size: 72, weight: .thin, design: .rounded))
-                    .foregroundStyle(pastelRainbowGradient)
-            } else {
-                Text("\(heartRateManager.currentHeartRate)")
-                    .font(.system(size: 72, weight: .thin, design: .rounded))
-                    .foregroundColor(heartRateColor)
-            }
-            
-            if isRainbowTheme {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(rainbowGradient)
-                    .modifier(PulseEffect())
-            } else if isPastelRainbowTheme {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(pastelRainbowGradient)
-                    .modifier(PulseEffect())
-            } else {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(heartRateColor)
-                    .modifier(PulseEffect())
+        ZStack {
+            VStack(spacing: 20) {
+                // Minimal - uses theme colors
+                if isRainbowTheme {
+                    Text("\(heartRateManager.currentHeartRate)")
+                        .font(.system(size: 72, weight: .thin, design: .rounded))
+                        .foregroundStyle(rainbowGradient)
+                } else if isPastelRainbowTheme {
+                    Text("\(heartRateManager.currentHeartRate)")
+                        .font(.system(size: 72, weight: .thin, design: .rounded))
+                        .foregroundStyle(pastelRainbowGradient)
+                } else {
+                    Text("\(heartRateManager.currentHeartRate)")
+                        .font(.system(size: 72, weight: .thin, design: .rounded))
+                        .foregroundColor(heartRateColor)
+                }
+                
+                if isRainbowTheme {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(rainbowGradient)
+                        .modifier(PulseEffect())
+                } else if isPastelRainbowTheme {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(pastelRainbowGradient)
+                        .modifier(PulseEffect())
+                } else {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(heartRateColor)
+                        .modifier(PulseEffect())
+                }
             }
         }
     }
     
     private var chunkyThemeView: some View {
-        VStack(spacing: 12) {
-            // Time at top (chunky style)
-            if isRainbowTheme {
-                Text(currentTimeString)
-                    .font(.system(size: 28, weight: .medium, design: .rounded))
-                    .foregroundStyle(rainbowGradient)
-            } else if isPastelRainbowTheme {
-                Text(currentTimeString)
-                    .font(.system(size: 28, weight: .medium, design: .rounded))
-                    .foregroundStyle(pastelRainbowGradient)
-            } else {
-                Text(currentTimeString)
-                    .font(.system(size: 28, weight: .medium, design: .rounded))
-                    .foregroundColor(pastelHeartRateColor)
+        VStack(spacing: showTimeOnWatch ? 12 : 20) {
+            // Time at top (chunky style) - conditional display
+            if showTimeOnWatch {
+                if isRainbowTheme {
+                    Text(currentTimeString)
+                        .font(.system(size: 28, weight: .medium, design: .rounded))
+                        .foregroundStyle(rainbowGradient)
+                } else if isPastelRainbowTheme {
+                    Text(currentTimeString)
+                        .font(.system(size: 28, weight: .medium, design: .rounded))
+                        .foregroundStyle(pastelRainbowGradient)
+                } else {
+                    Text(currentTimeString)
+                        .font(.system(size: 28, weight: .medium, design: .rounded))
+                        .foregroundColor(pastelHeartRateColor)
+                }
             }
             
             // Large heart rate without circle
@@ -747,14 +920,16 @@ struct HeartRateView: View {
         }
     }
     
+    private var watchFaceThemeView: some View {
+        WatchFaceView()
+            .environmentObject(heartRateManager)
+    }
+    
     private var currentTimeString: String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: Date())
     }
-    
-    
-    
     
     private var heartRateStatus: String {
         let heartRate = heartRateManager.currentHeartRate
@@ -828,7 +1003,8 @@ struct HeartRateView: View {
                                     
                                     // Second row with context and delta
                                     HStack(spacing: 12) {
-                                        // Standing/Sitting indicator
+                                        // Standing/Sitting indicator - Commented out for MVP2
+                                        /*
                                         if let context = reading.context {
                                             HStack(spacing: 4) {
                                                 Image(systemName: context.contains("Standing") ? "figure.stand" : "figure.seated.side")
@@ -840,6 +1016,7 @@ struct HeartRateView: View {
                                                     .foregroundColor(.white.opacity(0.8))
                                             }
                                         }
+                                        */
                                         
                                         // Delta indicator
                                         if !reading.deltaText.isEmpty {

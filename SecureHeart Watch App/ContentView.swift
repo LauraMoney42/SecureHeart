@@ -9,14 +9,17 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var heartRateManager: HeartRateManager
+    // @EnvironmentObject var watchFaceManager: WatchFaceManager // Disabled
     
     var body: some View {
         HeartRateView()
             .environmentObject(heartRateManager)
+            // .environmentObject(watchFaceManager) // Disabled
     }
 }
 
 #Preview {
     ContentView()
         .environmentObject(HeartRateManager())
+        // .environmentObject(WatchFaceManager()) // Disabled
 }
