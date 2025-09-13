@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var healthManager = HealthManager()
+    @StateObject private var emergencyManager = EmergencyContactsManager()
     @AppStorage("darkModeEnabled") private var darkModeEnabled = false
     
     var body: some View {
@@ -27,18 +28,33 @@ struct ContentView: View {
                 }
                 .tag(1)
             
+            // Emergency Contacts Tab
+            EmergencyContactsView()
+                .environmentObject(emergencyManager)
+                .tabItem {
+                    Label("Emergency", systemImage: "person.2.badge.plus")
+                }
+                .tag(2)
+            
             // Settings Tab
             SettingsTabView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
-                .tag(2)
+                .tag(3)
         }
         .onAppear {
             healthManager.requestAuthorization()
             // Initialize WatchConnectivity to receive data from Apple Watch
             _ = WatchConnectivityManager.shared
             print("📱 [iPhone] Initialized WatchConnectivity to receive data from Watch")
+            
+            // Monitor heart rate for emergency conditions
+            healthManager.emergencyThresholdCallback = { heartRate in
+                if heartRate > 150 || heartRate < 40 {
+                    emergencyManager.triggerEmergency(heartRate: heartRate)
+                }
+            }
         }
         .preferredColorScheme(darkModeEnabled ? .dark : .light)
     }

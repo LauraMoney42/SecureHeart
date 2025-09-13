@@ -118,6 +118,11 @@ class HealthManager: ObservableObject {
     @Published var deltaFromAverage: Int = 0  // Current HR vs Recent Average (for standing response monitoring)
     @Published var orthostaticEvents: [OrthostaticEvent] = [] // Orthostatic events from watch
     
+    // Emergency monitoring
+    var emergencyThresholdCallback: ((Int) -> Void)?
+    private var consecutiveHighReadings = 0
+    private var consecutiveLowReadings = 0
+    
     init() {
         // COMMENTED OUT FOR REAL DEVICE TESTING
         // Generate comprehensive medical test data
@@ -159,8 +164,46 @@ class HealthManager: ObservableObject {
         }
     }
     
+    
+    // MARK: - Emergency Monitoring
+    
+    private func checkEmergencyThresholds(_ heartRate: Int) {
+        let isHighRisk = heartRate > 150 || heartRate < 40
+        
+        if isHighRisk {
+            if heartRate > 150 {
+                consecutiveHighReadings += 1
+                consecutiveLowReadings = 0
+                
+                // Trigger emergency after 2 consecutive high readings to avoid false positives
+                if consecutiveHighReadings >= 2 {
+                    print("🚨 [iPhone] Emergency threshold exceeded: \(heartRate) BPM (high)")
+                    emergencyThresholdCallback?(heartRate)
+                    consecutiveHighReadings = 0 // Reset to avoid repeated triggers
+                }
+            } else if heartRate < 40 {
+                consecutiveLowReadings += 1
+                consecutiveHighReadings = 0
+                
+                // Trigger emergency after 2 consecutive low readings
+                if consecutiveLowReadings >= 2 {
+                    print("🚨 [iPhone] Emergency threshold exceeded: \(heartRate) BPM (low)")
+                    emergencyThresholdCallback?(heartRate)
+                    consecutiveLowReadings = 0 // Reset to avoid repeated triggers
+                }
+            }
+        } else {
+            // Reset counters when heart rate returns to normal range
+            consecutiveHighReadings = 0
+            consecutiveLowReadings = 0
+        }
+    }
+    
     private func updateHeartRateFromWatch(_ heartRate: Int) {
         print("📱 [iPhone] Updating UI with Watch heart rate: \(heartRate)")
+        
+        // Check for emergency conditions first
+        checkEmergencyThresholds(heartRate)
         
         // Update current heart rate
         currentHeartRate = heartRate
