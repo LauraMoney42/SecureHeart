@@ -34,21 +34,12 @@ class HeartRateManager: NSObject, ObservableObject {
     // Orthostatic monitoring
     @Published var orthostaticEvents: [OrthostaticEvent] = []
     @Published var isStanding = false
-    private let motionManager = CMMotionManager()
-    private let activityManager = CMMotionActivityManager()
+    private let motionDetectionManager = MotionDetectionManager()
     private var standingStartTime: Date?
     private var standingBaselineHeartRate: Int = 0
     private var debugCounter = 0
-    private var lastActivityUpdate = Date()
-    private var consecutiveStationaryCount = 0
     
-    // Enhanced feature extraction (inspired by Swift-HAR)
-    private var xAxisSamples: [Double] = []
-    private var yAxisSamples: [Double] = []
-    private var zAxisSamples: [Double] = []
-    private var movementFrequencySamples: [Double] = []
-    private var lastWristAnalysis = Date()
-    private var postureConfidence: Double = 0.5 // Start neutral
+    // Motion detection now handled by MotionDetectionManager
     
     // Enhanced sustained elevation tracking
     private var currentOrthostaticEvent: OrthostaticEvent?
@@ -197,9 +188,9 @@ class HeartRateManager: NSObject, ObservableObject {
         super.init()
         print("🚀 [WATCH] HeartRateManager initializing...")
         requestAuthorization()
-        
-        // Initialize motion detection for orthostatic monitoring
-        startMotionDetection()
+
+        // Initialize clean motion detection
+        setupMotionDetection()
         
         // Start monitoring after a short delay for authorization
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -988,255 +979,51 @@ extension HeartRateManager: HKWorkoutSessionDelegate {
 // MARK: - Enhanced Orthostatic Monitoring Extension
 extension HeartRateManager {
     
-    private func startMotionDetection() {
-        print("🎯 [WATCH] Starting enhanced motion detection...")
-        
-        // Try Activity Manager first (more accurate for activity detection)
-        if CMMotionActivityManager.isActivityAvailable() {
-            print("✅ [WATCH] Activity Manager available - starting activity updates")
-            activityManager.startActivityUpdates(to: .main) { [weak self] activity in
-                if let activity = activity {
-                    self?.processActivityData(activity)
-                }
-            }
-        } else {
-            print("⚠️ [WATCH] Activity Manager not available")
+    // MARK: - Clean Motion Detection Setup
+    private func setupMotionDetection() {
+        print("🎯 [WATCH] Setting up clean motion detection...")
+
+        // Start our new motion detection manager
+        motionDetectionManager.startDetection()
+
+        // Listen for posture changes
+        NotificationCenter.default.addObserver(
+            forName: .postureChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let userInfo = notification.userInfo,
+                  let newStanding = userInfo["isStanding"] as? Bool else { return }
+
+            self?.handlePostureChange(isStanding: newStanding)
         }
-        
-        // Start accelerometer for Swift-HAR style wrist position analysis
-        if motionManager.isAccelerometerAvailable {
-            print("✅ [WATCH] Accelerometer available - starting wrist analysis")
-            motionManager.accelerometerUpdateInterval = 1.0 // Once per second
-            motionManager.startAccelerometerUpdates(to: .main) { [weak self] data, error in
-                if let error = error {
-                    print("❌ [WATCH] Accelerometer error: \(error.localizedDescription)")
-                    return
-                }
-                
-                guard let accelData = data else { return }
-                self?.analyzeWristPosture(acceleration: accelData.acceleration)
-            }
-        }
-        
-        print("🏃 [WATCH] Motion detection started")
-        
-        // Set default posture after 5 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            print("🎯 [WATCH] Initial posture check - isStanding: \(self.isStanding)")
-            
-            // Default to standing during daytime hours if no motion detected
-            if !self.isStanding {
-                let hour = Calendar.current.component(.hour, from: Date())
-                if hour >= 6 && hour <= 22 {
-                    print("🔧 [WATCH] Defaulting to standing during daytime")
-                    self.isStanding = true
-                }
-            }
-        }
-        
-        // Periodic status check every 60 seconds
-        Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { _ in
-            print("⏰ [WATCH] Status: \(self.isStanding ? "Standing" : "Sitting")")
-            
-            // Timeout detection - assume sitting if no activity updates
-            let timeSinceLastActivity = Date().timeIntervalSince(self.lastActivityUpdate)
-            if timeSinceLastActivity > 120 {
-                print("🛋️ [WATCH] No activity for \(Int(timeSinceLastActivity))s - assuming sitting")
-                if self.isStanding {
-                    self.isStanding = false
-                    self.endStandingDetection()
-                }
+
+        print("✅ [WATCH] Clean motion detection setup complete")
+    }
+
+    private func handlePostureChange(isStanding newStanding: Bool) {
+        let wasStanding = isStanding
+
+        guard wasStanding != newStanding else { return }
+
+        print("🔄 [WATCH] Posture change: \(wasStanding ? "Standing" : "Sitting") → \(newStanding ? "Standing" : "Sitting")")
+
+        DispatchQueue.main.async {
+            self.isStanding = newStanding
+
+            if newStanding && !wasStanding {
+                // Started standing
+                self.startStandingDetection()
+            } else if !newStanding && wasStanding {
+                // Started sitting
+                self.endStandingDetection()
             }
         }
     }
+
+    // MARK: - Legacy motion detection methods removed
+    // Replaced with clean MotionDetectionManager implementation
     
-    // Process activity data from CMMotionActivityManager
-    private func processActivityData(_ activity: CMMotionActivity) {
-        lastActivityUpdate = Date()
-        var newStanding = isStanding
-        
-        if activity.stationary {
-            print("🪑 [ACTIVITY] User is stationary (likely sitting)")
-            newStanding = false
-            consecutiveStationaryCount += 1
-        } else if activity.walking || activity.running {
-            print("🚶 [ACTIVITY] User is walking/running (standing)")
-            newStanding = true
-            consecutiveStationaryCount = 0
-        } else if activity.automotive || activity.cycling {
-            print("🚗 [ACTIVITY] User in vehicle/cycling (sitting)")
-            newStanding = false
-            consecutiveStationaryCount += 1
-        }
-        
-        // Multiple stationary readings = definitely sitting
-        if consecutiveStationaryCount >= 3 {
-            print("🛋️ [ACTIVITY] Multiple stationary readings - definitely sitting")
-            newStanding = false
-        }
-        
-        // Require medium/high confidence for activity-based changes
-        if activity.confidence != .low && newStanding != isStanding {
-            print("🎯 [ACTIVITY] Activity change (conf: \(activity.confidence.rawValue)): \(isStanding ? "Standing" : "Sitting") → \(newStanding ? "Standing" : "Sitting")")
-            
-            // High-priority activities override wrist analysis
-            if activity.walking || activity.running || activity.automotive {
-                if newStanding && !isStanding {
-                    startStandingDetection()
-                } else if !newStanding && isStanding {
-                    endStandingDetection()
-                }
-                print("🎯 [ACTIVITY] High-priority activity - overriding wrist analysis")
-            } else if activity.stationary && consecutiveStationaryCount >= 2 {
-                if !newStanding && isStanding {
-                    endStandingDetection()
-                }
-            }
-        } else {
-            print("🔄 [ACTIVITY] Low confidence or no change - letting wrist analysis decide")
-        }
-    }
-    
-    // Swift-HAR inspired wrist position analysis
-    private func analyzeWristPosture(acceleration: CMAcceleration) {
-        let now = Date()
-        
-        // Capture all three axes separately (Swift-HAR approach)
-        xAxisSamples.append(acceleration.x)
-        yAxisSamples.append(acceleration.y) 
-        zAxisSamples.append(acceleration.z)
-        
-        // Calculate total acceleration magnitude
-        let totalAcceleration = sqrt(pow(acceleration.x, 2) + pow(acceleration.y, 2) + pow(acceleration.z, 2))
-        movementFrequencySamples.append(totalAcceleration)
-        
-        // Rolling window of 10 seconds
-        let maxSamples = 10
-        if xAxisSamples.count > maxSamples {
-            xAxisSamples.removeFirst()
-            yAxisSamples.removeFirst()
-            zAxisSamples.removeFirst()
-            movementFrequencySamples.removeFirst()
-        }
-        
-        // Analyze every 10 seconds
-        if now.timeIntervalSince(lastWristAnalysis) >= 10.0 && xAxisSamples.count >= 5 {
-            lastWristAnalysis = now
-            
-            // Extract features
-            let features = extractPostureFeatures()
-            
-            // Classify with confidence
-            let (likelyStanding, confidence) = classifyPosture(features: features)
-            
-            print("🤖 [WRIST] X:\(String(format: "%.3f", features.xMean)) Y:\(String(format: "%.3f", features.yMean)) Z:\(String(format: "%.3f", features.zMean)) Conf:\(String(format: "%.3f", confidence)) Standing:\(likelyStanding ? "YES" : "NO")")
-            
-            postureConfidence = confidence
-            
-            // Only change with high confidence
-            if likelyStanding != isStanding && confidence > 0.7 {
-                print("🎯 [WRIST] High confidence change: \(isStanding ? "Standing" : "Sitting") → \(likelyStanding ? "Standing" : "Sitting")")
-                
-                if likelyStanding && !isStanding {
-                    startStandingDetection()
-                } else if !likelyStanding && isStanding {
-                    endStandingDetection()
-                }
-            }
-        }
-    }
-    
-    // Feature extraction from multi-axis data
-    private func extractPostureFeatures() -> PostureFeatures {
-        let xMean = xAxisSamples.reduce(0, +) / Double(xAxisSamples.count)
-        let yMean = yAxisSamples.reduce(0, +) / Double(yAxisSamples.count)
-        let zMean = zAxisSamples.reduce(0, +) / Double(zAxisSamples.count)
-        
-        let xVariance = calculateVariance(xAxisSamples)
-        let yVariance = calculateVariance(yAxisSamples)
-        let zVariance = calculateVariance(zAxisSamples)
-        
-        let movementMean = movementFrequencySamples.reduce(0, +) / Double(movementFrequencySamples.count)
-        let movementVariance = calculateVariance(movementFrequencySamples)
-        
-        let xRange = (xAxisSamples.max() ?? 0) - (xAxisSamples.min() ?? 0)
-        let yRange = (yAxisSamples.max() ?? 0) - (yAxisSamples.min() ?? 0)
-        let zRange = (zAxisSamples.max() ?? 0) - (zAxisSamples.min() ?? 0)
-        
-        return PostureFeatures(
-            xMean: xMean, yMean: yMean, zMean: zMean,
-            xVariance: xVariance, yVariance: yVariance, zVariance: zVariance,
-            movementMean: movementMean, movementVariance: movementVariance,
-            xRange: xRange, yRange: yRange, zRange: zRange
-        )
-    }
-    
-    // Neural network inspired classification
-    private func classifyPosture(features: PostureFeatures) -> (standing: Bool, confidence: Double) {
-        var standingScore: Double = 0.0
-        var totalWeight: Double = 0.0
-        
-        // Z-axis orientation (40% weight)
-        let zWeight = 0.4
-        if abs(features.zMean) > 0.5 {
-            standingScore += zWeight * (features.zMean > 0 ? 1.0 : 0.0)
-        } else {
-            standingScore += zWeight * 0.5
-        }
-        totalWeight += zWeight
-        
-        // Movement variance (30% weight)
-        let movementWeight = 0.3
-        if features.movementVariance > 0.02 {
-            standingScore += movementWeight * 1.0
-        } else if features.movementVariance < 0.005 {
-            standingScore += movementWeight * 0.0
-        } else {
-            standingScore += movementWeight * 0.5
-        }
-        totalWeight += movementWeight
-        
-        // Y-axis arm angle (20% weight)
-        let yWeight = 0.2
-        if abs(features.yMean) > 0.3 {
-            standingScore += yWeight * 1.0
-        } else {
-            standingScore += yWeight * 0.2
-        }
-        totalWeight += yWeight
-        
-        // Range of motion (10% weight)
-        let rangeWeight = 0.1
-        let totalRange = features.xRange + features.yRange + features.zRange
-        if totalRange > 0.8 {
-            standingScore += rangeWeight * 1.0
-        } else if totalRange < 0.2 {
-            standingScore += rangeWeight * 0.0
-        } else {
-            standingScore += rangeWeight * 0.5
-        }
-        totalWeight += rangeWeight
-        
-        let normalizedScore = standingScore / totalWeight
-        let confidence = abs(normalizedScore - 0.5) * 2.0
-        
-        return (standing: normalizedScore > 0.5, confidence: confidence)
-    }
-    
-    // Feature structure
-    private struct PostureFeatures {
-        let xMean, yMean, zMean: Double
-        let xVariance, yVariance, zVariance: Double
-        let movementMean, movementVariance: Double
-        let xRange, yRange, zRange: Double
-    }
-    
-    private func calculateVariance(_ samples: [Double]) -> Double {
-        guard samples.count > 1 else { return 0 }
-        let mean = samples.reduce(0, +) / Double(samples.count)
-        let squaredDifferences = samples.map { pow($0 - mean, 2) }
-        return squaredDifferences.reduce(0, +) / Double(samples.count - 1)
-    }
     
     private func startStandingDetection() {
         print("🧍 [WATCH] Standing detected - starting enhanced orthostatic monitoring")

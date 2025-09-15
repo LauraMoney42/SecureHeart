@@ -2,7 +2,7 @@
 //  HistoryView.swift
 //  Secure Heart
 //
-//  Heart rate history and orthostatic events display
+//  Heart rate data analysis and history display
 //
 
 import SwiftUI
@@ -16,98 +16,451 @@ enum HistorySortOption: String, CaseIterable {
     // case sittingOnly = "Sitting Only" // Commented out for MVP2
 }
 
-struct HistoryTabView: View {
+struct DataTabView: View {
+    @ObservedObject var healthManager: HealthManager
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Recent History Section
+                    RecentHistoryView(healthManager: healthManager)
+
+                    // Weekly Trend Graph
+                    WeeklyTrendGraphView(healthManager: healthManager)
+
+                    // Monthly Trend Graph
+                    MonthlyTrendGraphView(healthManager: healthManager)
+                }
+                .padding()
+            }
+            .navigationTitle("Data")
+            .background(Color(UIColor.systemGroupedBackground))
+        }
+    }
+}
+
+struct RecentHistoryView: View {
     @ObservedObject var healthManager: HealthManager
     @State private var sortOption: HistorySortOption = .newestFirst
     @State private var showingSortMenu = false
     @State private var showingShareSheet = false
-    
+
     var sortedHistory: [HeartRateEntry] {
+        // Show recent entries (last 50 for better performance)
+        let recentEntries = Array(healthManager.heartRateHistory.prefix(50))
+
         switch sortOption {
         case .newestFirst:
-            return healthManager.heartRateHistory.sorted { $0.date > $1.date }
+            return recentEntries.sorted { $0.date > $1.date }
         case .oldestFirst:
-            return healthManager.heartRateHistory.sorted { $0.date < $1.date }
+            return recentEntries.sorted { $0.date < $1.date }
         case .heartRateHigh:
-            return healthManager.heartRateHistory.sorted { $0.heartRate > $1.heartRate }
+            return recentEntries.sorted { $0.heartRate > $1.heartRate }
         case .heartRateLow:
-            return healthManager.heartRateHistory.sorted { $0.heartRate < $1.heartRate }
-        // case .standingOnly: // Commented out for MVP2
-        //     return healthManager.heartRateHistory.filter { entry in
-        //         entry.context?.contains("Standing") ?? false
-        //     }.sorted { $0.date > $1.date }
-        // case .sittingOnly: // Commented out for MVP2
-        //     return healthManager.heartRateHistory.filter { entry in
-        //         entry.context?.contains("Sitting") ?? false || entry.context == nil
-        //     }.sorted { $0.date > $1.date }
+            return recentEntries.sorted { $0.heartRate < $1.heartRate }
         }
     }
-    
+
     var body: some View {
-        NavigationView {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section Header
+            HStack {
+                Text("Recent History")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                Spacer()
+
+                // Sort Button
+                Button(action: {
+                    showingSortMenu = true
+                }) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .foregroundColor(.blue)
+                }
+                .confirmationDialog("Sort Recent History", isPresented: $showingSortMenu, titleVisibility: .visible) {
+                    ForEach(HistorySortOption.allCases, id: \.self) { option in
+                        Button(option.rawValue) {
+                            sortOption = option
+                        }
+                    }
+                    Button("Cancel", role: .cancel) { }
+                }
+
+                // Share Button
+                Button(action: {
+                    showingShareSheet = true
+                }) {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundColor(.blue)
+                }
+            }
+
+            // Content
             Group {
                 if sortedHistory.isEmpty {
                     // Empty state
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         Image(systemName: "heart.text.square")
-                            .font(.system(size: 60))
+                            .font(.system(size: 40))
                             .foregroundColor(.secondary)
-                        
+
                         VStack(spacing: 8) {
                             Text("No Heart Rate Data Yet")
-                                .font(.title2)
-                                .fontWeight(.semibold)
+                                .font(.headline)
                                 .foregroundColor(.primary)
-                            
-                            Text("Connect your Apple Watch to start tracking heart rate data. It will appear here once you begin monitoring.")
-                                .font(.body)
+
+                            Text("Connect your Apple Watch to start tracking.")
+                                .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
-                                .padding(.horizontal, 40)
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(UIColor.systemGroupedBackground))
+                    .frame(maxWidth: .infinity, minHeight: 120)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
                 } else {
-                    List {
-                        // Heart Rate History Section Only - Simplified
-                        ForEach(sortedHistory) { entry in
-                            HeartRateHistoryRow(entry: entry, healthManager: healthManager)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("History")
-            .toolbar {
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    // Share Button with all export options
-                    Button(action: {
-                        showingShareSheet = true
-                    }) {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(.blue)
-                    }
-                    
-                    // Sort Button  
-                    Button(action: {
-                        showingSortMenu = true
-                    }) {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .foregroundColor(.blue)
-                    }
-                    .confirmationDialog("Sort Heart Rate History", isPresented: $showingSortMenu, titleVisibility: .visible) {
-                        ForEach(HistorySortOption.allCases, id: \.self) { option in
-                            Button(option.rawValue) {
-                                sortOption = option
+                    // Scrollable container for history entries
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(sortedHistory) { entry in
+                                HeartRateHistoryRow(entry: entry, healthManager: healthManager)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                                    .cornerRadius(8)
                             }
                         }
-                        Button("Cancel", role: .cancel) { }
+                        .padding(.horizontal, 4)
+                    }
+                    .frame(maxHeight: 300) // Full height now that label is removed
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
+                }
+            }
+        }
+        .padding()
+        .background(Color(UIColor.systemGroupedBackground))
+        .cornerRadius(12)
+        .sheet(isPresented: $showingShareSheet) {
+            ExportOptionsSheet(healthManager: healthManager)
+        }
+    }
+}
+
+struct WeeklyTrendGraphView: View {
+    @ObservedObject var healthManager: HealthManager
+
+    var weeklyData: [DayTrendData] {
+        let calendar = Calendar.current
+        let today = Date()
+        var data: [DayTrendData] = []
+
+        // Get last 7 days
+        for i in 0..<7 {
+            let date = calendar.date(byAdding: .day, value: -i, to: today)!
+            let startOfDay = calendar.startOfDay(for: date)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+            let dayEntries = healthManager.heartRateHistory.filter { entry in
+                entry.date >= startOfDay && entry.date < endOfDay
+            }
+
+            let avgHR = dayEntries.isEmpty ? 0 : dayEntries.map { $0.heartRate }.reduce(0, +) / dayEntries.count
+            let maxHR = dayEntries.map { $0.heartRate }.max() ?? 0
+            let minHR = dayEntries.map { $0.heartRate }.min() ?? 0
+
+            data.append(DayTrendData(
+                date: date,
+                averageHR: avgHR,
+                maxHR: maxHR,
+                minHR: minHR,
+                entryCount: dayEntries.count
+            ))
+        }
+
+        return data.reversed() // Show oldest to newest
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Weekly Trend")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            if weeklyData.allSatisfy({ $0.entryCount == 0 }) {
+                VStack(spacing: 16) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+
+                    Text("No data for the past week")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 120)
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .cornerRadius(12)
+            } else {
+                WeeklyTrendChart(data: weeklyData)
+                    .frame(height: 200)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
+            }
+        }
+        .padding()
+        .background(Color(UIColor.systemGroupedBackground))
+        .cornerRadius(12)
+    }
+}
+
+struct MonthlyTrendGraphView: View {
+    @ObservedObject var healthManager: HealthManager
+
+    var monthlyData: [WeekTrendData] {
+        let calendar = Calendar.current
+        let today = Date()
+        var data: [WeekTrendData] = []
+
+        // Get last 4 weeks
+        for i in 0..<4 {
+            let startDate = calendar.date(byAdding: .weekOfYear, value: -i, to: today)!
+            let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: startDate)!.start
+            let endOfWeek = calendar.dateInterval(of: .weekOfYear, for: startDate)!.end
+
+            let weekEntries = healthManager.heartRateHistory.filter { entry in
+                entry.date >= startOfWeek && entry.date < endOfWeek
+            }
+
+            let avgHR = weekEntries.isEmpty ? 0 : weekEntries.map { $0.heartRate }.reduce(0, +) / weekEntries.count
+            let maxHR = weekEntries.map { $0.heartRate }.max() ?? 0
+            let minHR = weekEntries.map { $0.heartRate }.min() ?? 0
+
+            data.append(WeekTrendData(
+                weekStart: startOfWeek,
+                averageHR: avgHR,
+                maxHR: maxHR,
+                minHR: minHR,
+                entryCount: weekEntries.count
+            ))
+        }
+
+        return data.reversed() // Show oldest to newest
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Monthly Trend")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            if monthlyData.allSatisfy({ $0.entryCount == 0 }) {
+                VStack(spacing: 16) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+
+                    Text("No data for the past month")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 120)
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .cornerRadius(12)
+            } else {
+                MonthlyTrendChart(data: monthlyData)
+                    .frame(height: 200)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
+            }
+        }
+        .padding()
+        .background(Color(UIColor.systemGroupedBackground))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Data Models for Trend Analysis
+
+struct DayTrendData {
+    let date: Date
+    let averageHR: Int
+    let maxHR: Int
+    let minHR: Int
+    let entryCount: Int
+}
+
+struct WeekTrendData {
+    let weekStart: Date
+    let averageHR: Int
+    let maxHR: Int
+    let minHR: Int
+    let entryCount: Int
+}
+
+// MARK: - Chart Components
+
+struct WeeklyTrendChart: View {
+    let data: [DayTrendData]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            // Chart area
+            GeometryReader { geometry in
+                let maxHR = data.map { $0.maxHR }.max() ?? 100
+                let minHR = data.map { $0.minHR }.filter { $0 > 0 }.min() ?? 60
+                let range = max(maxHR - minHR, 20) // Minimum range of 20
+
+                ZStack {
+                    // Background grid
+                    ForEach(0..<5) { i in
+                        let y = geometry.size.height * CGFloat(i) / 4
+                        Path { path in
+                            path.move(to: CGPoint(x: 0, y: y))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                        }
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    }
+
+                    // Average line
+                    Path { path in
+                        for (index, dayData) in data.enumerated() {
+                            if dayData.entryCount > 0 {
+                                let x = geometry.size.width * CGFloat(index) / CGFloat(max(data.count - 1, 1))
+                                let y = geometry.size.height * (1 - CGFloat(dayData.averageHR - minHR) / CGFloat(range))
+
+                                if index == 0 || data[index - 1].entryCount == 0 {
+                                    path.move(to: CGPoint(x: x, y: y))
+                                } else {
+                                    path.addLine(to: CGPoint(x: x, y: y))
+                                }
+                            }
+                        }
+                    }
+                    .stroke(Color.blue, lineWidth: 2)
+
+                    // Data points
+                    ForEach(Array(data.enumerated()), id: \.offset) { index, dayData in
+                        if dayData.entryCount > 0 {
+                            let x = geometry.size.width * CGFloat(index) / CGFloat(max(data.count - 1, 1))
+                            let y = geometry.size.height * (1 - CGFloat(dayData.averageHR - minHR) / CGFloat(range))
+
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 6, height: 6)
+                                .position(x: x, y: y)
+                        }
                     }
                 }
             }
-            .sheet(isPresented: $showingShareSheet) {
-                ExportOptionsSheet(healthManager: healthManager, sortedHistory: sortedHistory)
+            .frame(height: 120)
+            .padding()
+
+            // Day labels
+            HStack {
+                ForEach(Array(data.enumerated()), id: \.offset) { index, dayData in
+                    VStack(spacing: 4) {
+                        Text(dayData.date.formatted(.dateTime.weekday(.abbreviated)))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        if dayData.entryCount > 0 {
+                            Text("\(dayData.averageHR)")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                        } else {
+                            Text("--")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
             }
+            .padding(.horizontal)
+        }
+    }
+}
+
+struct MonthlyTrendChart: View {
+    let data: [WeekTrendData]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            // Chart area
+            GeometryReader { geometry in
+                let maxHR = data.map { $0.maxHR }.max() ?? 100
+                let minHR = data.map { $0.minHR }.filter { $0 > 0 }.min() ?? 60
+                let range = max(maxHR - minHR, 20) // Minimum range of 20
+
+                ZStack {
+                    // Background grid
+                    ForEach(0..<5) { i in
+                        let y = geometry.size.height * CGFloat(i) / 4
+                        Path { path in
+                            path.move(to: CGPoint(x: 0, y: y))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                        }
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    }
+
+                    // Average line
+                    Path { path in
+                        for (index, weekData) in data.enumerated() {
+                            if weekData.entryCount > 0 {
+                                let x = geometry.size.width * CGFloat(index) / CGFloat(max(data.count - 1, 1))
+                                let y = geometry.size.height * (1 - CGFloat(weekData.averageHR - minHR) / CGFloat(range))
+
+                                if index == 0 || data[index - 1].entryCount == 0 {
+                                    path.move(to: CGPoint(x: x, y: y))
+                                } else {
+                                    path.addLine(to: CGPoint(x: x, y: y))
+                                }
+                            }
+                        }
+                    }
+                    .stroke(Color.green, lineWidth: 2)
+
+                    // Data points
+                    ForEach(Array(data.enumerated()), id: \.offset) { index, weekData in
+                        if weekData.entryCount > 0 {
+                            let x = geometry.size.width * CGFloat(index) / CGFloat(max(data.count - 1, 1))
+                            let y = geometry.size.height * (1 - CGFloat(weekData.averageHR - minHR) / CGFloat(range))
+
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                                .position(x: x, y: y)
+                        }
+                    }
+                }
+            }
+            .frame(height: 120)
+            .padding()
+
+            // Week labels
+            HStack {
+                ForEach(Array(data.enumerated()), id: \.offset) { index, weekData in
+                    VStack(spacing: 4) {
+                        Text("Week \(4 - index)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        if weekData.entryCount > 0 {
+                            Text("\(weekData.averageHR)")
+                                .font(.caption2)
+                                .foregroundColor(.green)
+                        } else {
+                            Text("--")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.horizontal)
         }
     }
 }

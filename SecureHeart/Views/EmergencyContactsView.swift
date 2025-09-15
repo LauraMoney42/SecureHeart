@@ -9,18 +9,25 @@ import SwiftUI
 
 struct EmergencyContactsView: View {
     @EnvironmentObject var emergencyManager: EmergencyContactsManager
+    @StateObject private var verificationManager = ContactVerificationManager()
     @State private var showingAddContact = false
     @State private var showingEmergencyAlert = false
-    
+
     var body: some View {
         NavigationView {
             VStack {
+                // Connection Status Header
+                ConnectionStatusHeader(emergencyManager: emergencyManager)
+
                 if emergencyManager.contacts.isEmpty {
                     EmptyContactsView(showingAddContact: $showingAddContact)
                 } else {
-                    ContactsList(emergencyManager: emergencyManager)
+                    ContactsList(
+                        emergencyManager: emergencyManager,
+                        verificationManager: verificationManager
+                    )
                 }
-                
+
                 EmergencyStatusCard(emergencyManager: emergencyManager)
             }
             .navigationTitle("Emergency Contacts")
@@ -42,11 +49,48 @@ struct EmergencyContactsView: View {
             } message: {
                 Text("Emergency contacts have been notified. Press 'Resolve' when the situation is handled.")
             }
+            .environmentObject(verificationManager)
         }
         .onChange(of: emergencyManager.emergencyTriggered) { triggered in
             if triggered {
                 showingEmergencyAlert = true
             }
+        }
+    }
+}
+
+struct ConnectionStatusHeader: View {
+    @ObservedObject var emergencyManager: EmergencyContactsManager
+
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(statusColor)
+                .frame(width: 10, height: 10)
+
+            Text(emergencyManager.connectionStatus)
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Spacer()
+
+            if emergencyManager.isLoading {
+                ProgressView()
+                    .scaleEffect(0.7)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 4)
+    }
+
+    private var statusColor: Color {
+        switch emergencyManager.connectionStatus {
+        case "Connected":
+            return .green
+        case "Connecting...":
+            return .orange
+        default:
+            return .red
         }
     }
 }
@@ -82,14 +126,16 @@ struct EmptyContactsView: View {
 
 struct ContactsList: View {
     @ObservedObject var emergencyManager: EmergencyContactsManager
+    @ObservedObject var verificationManager: ContactVerificationManager
     @State private var editingContact: EmergencyContact?
-    
+
     var body: some View {
         List {
             ForEach(emergencyManager.contacts) { contact in
                 ContactRow(
                     contact: contact,
                     emergencyManager: emergencyManager,
+                    verificationManager: verificationManager,
                     editingContact: $editingContact
                 )
             }
@@ -104,15 +150,16 @@ struct ContactsList: View {
 struct ContactRow: View {
     let contact: EmergencyContact
     @ObservedObject var emergencyManager: EmergencyContactsManager
+    @ObservedObject var verificationManager: ContactVerificationManager
     @Binding var editingContact: EmergencyContact?
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(contact.name)
                         .font(.headline)
-                    
+
                     if contact.isPrimary {
                         Text("PRIMARY")
                             .font(.caption2)
@@ -123,48 +170,102 @@ struct ContactRow: View {
                             .foregroundColor(.white)
                             .cornerRadius(4)
                     }
+
+                    if contact.isVerified || contact.invitationAccepted {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.caption)
+                    } else if contact.invitationSent {
+                        Image(systemName: "clock.circle.fill")
+                            .foregroundColor(.orange)
+                            .font(.caption)
+                    }
                 }
-                
+
                 Text(contact.phoneNumber)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                
+
                 Text(contact.relationship)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 if let email = contact.email {
                     Text(email)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
+
+                // Verification status
+                if let status = verificationManager.verificationResults[contact.id] {
+                    Text(status)
+                        .font(.caption2)
+                        .foregroundColor(.blue)
+                        .padding(.top, 2)
+                }
             }
-            
+
             Spacer()
-            
-            Menu {
-                Button("Edit") {
-                    editingContact = contact
+
+            // Verification indicator
+            VStack {
+                if verificationManager.verificationInProgress[contact.id] == true {
+                    ProgressView()
+                        .scaleEffect(0.7)
                 }
-                
-                Button("Set as Primary") {
-                    emergencyManager.setPrimaryContact(contact)
-                }
-                
-                Button("Call", systemImage: "phone") {
-                    if let phoneURL = URL(string: "tel:\(contact.phoneNumber.filter { !$0.isWhitespace })") {
-                        UIApplication.shared.open(phoneURL)
+
+                Menu {
+                    Button("Edit") {
+                        editingContact = contact
                     }
-                }
-                
-                Button("Text", systemImage: "message") {
-                    if let smsURL = URL(string: "sms:\(contact.phoneNumber.filter { !$0.isWhitespace })") {
-                        UIApplication.shared.open(smsURL)
+
+                    Button("Set as Primary") {
+                        emergencyManager.setPrimaryContact(contact)
                     }
+
+                    Divider()
+
+                    if !contact.isVerified {
+                        Button("Verify Phone", systemImage: "phone.badge.checkmark") {
+                            Task {
+                                do {
+                                    try await verificationManager.initiatePhoneVerification(for: contact)
+                                } catch {
+                                    print("❌ Phone verification failed: \(error)")
+                                }
+                            }
+                        }
+
+                        if contact.email != nil {
+                            Button("Verify Email", systemImage: "envelope.badge.checkmark") {
+                                Task {
+                                    do {
+                                        try await verificationManager.initiateEmailVerification(for: contact)
+                                    } catch {
+                                        print("❌ Email verification failed: \(error)")
+                                    }
+                                }
+                            }
+                        }
+
+                        Divider()
+                    }
+
+                    Button("Call", systemImage: "phone") {
+                        if let phoneURL = URL(string: "tel:\(contact.phoneNumber.filter { !$0.isWhitespace })") {
+                            UIApplication.shared.open(phoneURL)
+                        }
+                    }
+
+                    Button("Text", systemImage: "message") {
+                        if let smsURL = URL(string: "sms:\(contact.phoneNumber.filter { !$0.isWhitespace })") {
+                            UIApplication.shared.open(smsURL)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.secondary)
                 }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 4)

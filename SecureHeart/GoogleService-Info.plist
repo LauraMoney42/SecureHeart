@@ -7,17 +7,17 @@
 	<key>REVERSED_CLIENT_ID</key>
 	<string>com.googleusercontent.apps.123456789012-abcdefghijklmnopqrstuvwxyz123456</string>
 	<key>API_KEY</key>
-	<string>AIzaSyABCDEF123456789_EXAMPLE_API_KEY</string>
+	<string>AIzaSyApYKAY5xns9NoHyA4BvCEz21CK_e5wcAE</string>
 	<key>GCM_SENDER_ID</key>
-	<string>123456789012</string>
+	<string>577477234</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.kindcode.secureheart</string>
 	<key>PROJECT_ID</key>
-	<string>secureheart-pots-monitor</string>
+	<string>heart-577bc</string>
 	<key>STORAGE_BUCKET</key>
-	<string>secureheart-pots-monitor.appspot.com</string>
+	<string>heart-577bc.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false/>
 	<key>IS_ANALYTICS_ENABLED</key>

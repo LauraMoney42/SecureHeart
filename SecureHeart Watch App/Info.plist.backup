@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSMotionUsageDescription</key>
+	<string>Secure Heart uses motion data to detect when you're standing or sitting, which helps provide accurate heart rate context for medical monitoring. This data never leaves your device and is only used for health analysis.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Secure Heart reads your heart rate data to monitor for POTS episodes and other heart rate irregularities. This data is stored locally on your device for your privacy.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Secure Heart may update your heart rate data to provide context about standing/sitting positions for medical analysis.</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.kindcode.secureheart</string>
+	<key>WKRunsIndependentlyOfCompanionApp</key>
+	<false/>
+</dict>
+</plist>

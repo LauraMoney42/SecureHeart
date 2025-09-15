@@ -126,64 +126,26 @@ struct WatchFaceView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Layer 1: Top spacer to avoid system time (top-right)
-                Spacer()
-                    .frame(height: 35) // Push content down to avoid system time
-                
-                // Layer 2: Small heart icon - positioned away from system time
+                // Layer 1: Date positioned under system time (top-right)
                 HStack {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(heartColor)
-                        .scaleEffect(pulseAnimation ? 1.15 : 1.0)
-                        .animation(
-                            .easeInOut(duration: heartBeatDuration)
-                                .repeatForever(autoreverses: true),
-                            value: pulseAnimation
-                        )
                     Spacer()
-                }
-                .padding(.leading, 20)
-                
-                // Layer 3: Date positioned on left (away from system time)
-                HStack {
                     Text(dateString)
-                        .font(.system(size: 18, weight: .medium, design: .default))
+                        .font(.system(size: 16, weight: .medium, design: .default))
                         .foregroundColor(textColor)
-                        .tracking(1.2)
-                    Spacer()
+                        .tracking(1.0)
                 }
-                .padding(.leading, 20)
-                .padding(.top, 5)
-                
-                // Layer 4: Large heart rate in center (main focus)
+                .padding(.trailing, 10)
+                .padding(.top, -5) // Move higher up and further right
+
+                // Layer 2: Large heart rate in center (main focus)
                 Spacer()
-                
+
                 Text("\(heartRateManager.currentHeartRate)")
-                    .font(.system(size: 72, weight: .ultraLight, design: .rounded))
+                    .font(.system(size: 92, weight: .light, design: .default))
                     .foregroundColor(customBPMTextColor)
-                    .scaleEffect(pulseAnimation ? 1.02 : 1.0)
-                    .animation(
-                        .easeInOut(duration: heartBeatDuration)
-                            .repeatForever(autoreverses: true),
-                        value: pulseAnimation
-                    )
-                
-                // BPM label
-                Text("BPM")
-                    .font(.system(size: 14, weight: .light))
-                    .foregroundColor(customBPMTextColor.opacity(0.8))
-                    .tracking(2.0)
-                    .padding(.top, -5)
-                
-                // Layer 5: Bottom spacer
+
+                // Layer 3: Bottom spacer
                 Spacer()
-                
-                // Optional: Small time display at bottom (our styled version)
-                Text(timeString24Hour)
-                    .font(.system(size: 16, weight: .light, design: .monospaced))
-                    .foregroundColor(tertiaryTextColor)
-                    .padding(.bottom, 20)
             }
         }
         .onReceive(timer) { _ in

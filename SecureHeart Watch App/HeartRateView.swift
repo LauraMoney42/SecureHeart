@@ -11,19 +11,19 @@ struct HeartRateView: View {
     @EnvironmentObject var heartRateManager: HeartRateManager
     @Environment(\.isLuminanceReduced) var isLuminanceReduced
     @State private var pulseAnimation = false
-    @State private var crownValue: Double = 0
+    // Digital Crown functionality removed to prevent app crashes
     @State private var isAlwaysOnDisplay = false
     @State private var showingHistory = false
     @State private var showingSettings = false
     @State private var historyOffset: CGFloat = 0
     
     @AppStorage("selectedColorTheme") private var selectedColorTheme = 0
-    @AppStorage("selectedWatchFace") private var selectedWatchFace = 0
+    @AppStorage("selectedWatchFace") private var selectedWatchFace = 3
     @AppStorage("alwaysOnEnabled") private var alwaysOnEnabled = true
-    @AppStorage("digitalCrownSensitivity") private var digitalCrownSensitivity = 1.0
+    // Digital Crown sensitivity setting removed
     @AppStorage("showTimeOnWatch") private var showTimeOnWatch = true
-    @AppStorage("watchFaceBackgroundColor") private var selectedBackgroundColor = 0 // 0=Black, 1=Off-white, 2+=Color themes
-    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 12 // Default to white
+    @AppStorage("watchFaceBackgroundColor") private var selectedBackgroundColor = 14 // 14=Black, 0=Red
+    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 3 // Default to green
     
     // Custom theme colors stored as hex strings
     @AppStorage("customLowColor") private var customLowColorHex = "#007AFF" // Blue
@@ -181,6 +181,7 @@ struct HeartRateView: View {
             .ignoresSafeArea(.all)
             .onAppear {
                 print("❤️ HeartRateView appeared - forcing authorization")
+                setupDefaultsOnFirstLaunch()
                 pulseAnimation = true
                 setupAlwaysOnDisplay()
                 // Force start monitoring when view appears
@@ -191,13 +192,6 @@ struct HeartRateView: View {
                 // Manual refresh on tap
                 heartRateManager.fetchLatestHeartRate()
             }
-            #if os(watchOS)
-            .focusable()
-            .digitalCrownRotation($crownValue, from: 0, through: 10, by: digitalCrownSensitivity, sensitivity: .high, isContinuous: true, isHapticFeedbackEnabled: true)
-            .onChange(of: crownValue) { _, newValue in
-                handleDigitalCrownRotation(newValue)
-            }
-            #endif
             .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
                 detectAlwaysOnState()
             }
@@ -346,7 +340,29 @@ struct HeartRateView: View {
             }
         }
     }
-    
+
+    private func setupDefaultsOnFirstLaunch() {
+        // Only set defaults if this is truly a first launch
+        let hasEverLaunched = UserDefaults.standard.bool(forKey: "SecureHeartHasLaunched")
+
+        if !hasEverLaunched {
+            print("🎯 First launch detected - setting up better defaults")
+
+            // Set better defaults only on first launch
+            selectedWatchFace = 3           // Chunky theme (Face 3)
+            selectedBackgroundColor = 14    // Black background
+            selectedBPMTextColor = 3        // Green text
+            selectedColorTheme = 0          // Classic color theme (heart rate zone guidance)
+
+            // Mark that app has launched so we don't override user settings
+            UserDefaults.standard.set(true, forKey: "SecureHeartHasLaunched")
+
+            print("✅ First-launch defaults applied: Classic theme, black background")
+        } else {
+            print("👤 Preserving user's chosen theme: \(selectedColorTheme)")
+        }
+    }
+
     private func setupAlwaysOnDisplay() {
         // Configure for always-on display optimization
         if alwaysOnEnabled {
@@ -435,24 +451,8 @@ struct HeartRateView: View {
         }
     }
     
-    private func handleDigitalCrownRotation(_ value: Double) {
-        // Handle Digital Crown for navigation through watch faces
-        let threshold = 2.0
-        
-        if value >= threshold {
-            // Move to next watch face
-            withAnimation(.easeInOut(duration: 0.3)) {
-                selectedWatchFace = (selectedWatchFace + 1) % 6
-            }
-            crownValue = 0 // Reset
-        } else if value <= -threshold {
-            // Move to previous watch face
-            withAnimation(.easeInOut(duration: 0.3)) {
-                selectedWatchFace = selectedWatchFace > 0 ? selectedWatchFace - 1 : 5
-            }
-            crownValue = 0 // Reset
-        }
-    }
+    // Digital Crown navigation removed - was causing app crashes
+    // Users can swipe or use other gestures to navigate watch faces if needed
     
     private var heartRateColor: Color {
         let heartRate = heartRateManager.currentHeartRate
@@ -987,8 +987,8 @@ struct HeartRateView: View {
                                             .fill(colorForHeartRate(reading.heartRate))
                                             .frame(width: 10, height: 10)
                                         
-                                        // Heart rate with BPM on same line
-                                        Text("\(reading.heartRate) BPM")
+                                        // Heart rate number only (removed BPM for better visibility)
+                                        Text("\(reading.heartRate)")
                                             .font(.system(size: 20, weight: .bold, design: .rounded))
                                             .foregroundColor(.white)
                                             .lineLimit(1)

@@ -27,55 +27,52 @@ struct HeartRateCard: View {
                     .scaleEffect(isAnimating ? 1.2 : 1.0)
                     .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: isAnimating)
                 
-                // BPM display
-                HStack(alignment: .bottom, spacing: 4) {
-                    let heartRate = healthManager.liveHeartRate > 0 ? healthManager.liveHeartRate : healthManager.currentHeartRate
-                    
-                    if heartRate == 0 {
-                        Text("--")
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                // BPM display with reorganized layout
+                VStack(alignment: .center, spacing: 16) {
+                    // Main row: Heart rate number, BPM, and Status on same line
+                    HStack(alignment: .bottom, spacing: 12) {
+                        let heartRate = healthManager.liveHeartRate > 0 ? healthManager.liveHeartRate : healthManager.currentHeartRate
+
+                        if heartRate == 0 {
+                            Text("--")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("\(heartRate)")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+                        }
+
+                        Text("BPM")
+                            .font(.title3)
                             .foregroundColor(.secondary)
-                    } else {
-                        Text("\(heartRate)")
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
-                    }
-                    
-                    Text("BPM")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 8)
-                }
-                
-                // Status (Heart Rate Zone) - Posture display commented out for MVP2
-                VStack(alignment: .leading, spacing: 4) {
-                    // if let recentEntry = healthManager.heartRateHistory.first,
-                    //    let context = recentEntry.context {
-                    //     Text(context.contains("Standing") ? "Standing" : "Sitting")
-                    //         .font(.subheadline)
-                    //         .fontWeight(.medium)
-                    //         .foregroundColor(.primary)
-                    // } else {
+                            .padding(.bottom, 8)
+
                         Text(getZoneText())
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(getZoneColor())
-                    // }
-                    
-                    
-                    // Live indicator if applicable
-                    if healthManager.isWatchConnected && healthManager.liveHeartRate > 0 {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 6, height: 6)
-                            Text("LIVE")
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.green)
+                            .padding(.bottom, 8)
+                    }
+
+                    // LIVE indicator positioned at bottom right of this section
+                    HStack {
+                        Spacer()
+                        if healthManager.isWatchConnected && healthManager.liveHeartRate > 0 {
+                            HStack(spacing: 4) {
+                                Circle()
+                                    .fill(Color.green)
+                                    .frame(width: 6, height: 6)
+                                Text("LIVE")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.green)
+                            }
                         }
                     }
                 }
+
+                Spacer() // Push content to the left
             }
             .padding(.vertical, 8)
             

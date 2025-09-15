@@ -122,18 +122,26 @@ class HealthManager: ObservableObject {
     var emergencyThresholdCallback: ((Int) -> Void)?
     private var consecutiveHighReadings = 0
     private var consecutiveLowReadings = 0
+
+    // POTS-specific monitoring (enhanced POTS detection)
+    var rapidIncreaseCallback: ((Int, Int, TimeInterval) -> Void)? // (current, baseline, timeSpan)
+    private var potsCheckTimer: Timer?
     
     init() {
-        // COMMENTED OUT FOR REAL DEVICE TESTING
-        // Generate comprehensive medical test data
-        // generateRealisticMedicalTestData()
-        
+        #if targetEnvironment(simulator)
+        // Generate comprehensive medical test data for simulator
+        generateRealisticMedicalTestData()
+        #else
         // Update current stats - start with 0 for real data
         currentHeartRate = 0  // Will be populated by real heart rate data
         lastUpdated = "Waiting for data..."
+        #endif
         
         // Listen for heart rate updates from Apple Watch
         setupWatchConnectivityListeners()
+
+        // Start POTS monitoring (periodic checks for rapid increases)
+        startPOTSMonitoring()
     }
     
     private func setupWatchConnectivityListeners() {
@@ -163,8 +171,53 @@ class HealthManager: ObservableObject {
             }
         }
     }
-    
-    
+
+    // MARK: - POTS-Specific Monitoring (Enhanced Detection)
+
+    private func startPOTSMonitoring() {
+        // Check every 30 seconds for POTS diagnostic criteria patterns
+        potsCheckTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            self?.checkForPOTSPatterns()
+        }
+        print("🩺 [iPhone] POTS monitoring started - checking for rapid increases every 30s")
+    }
+
+    private func checkForPOTSPatterns() {
+        guard !heartRateHistory.isEmpty else { return }
+
+        let now = Date()
+        let fiveMinutesAgo = now.addingTimeInterval(-300) // 5 minutes
+        let tenMinutesAgo = now.addingTimeInterval(-600)  // 10 minutes
+
+        // Get readings from the specified time windows
+        let recent5Min = heartRateHistory.filter { $0.date >= fiveMinutesAgo }
+        let recent10Min = heartRateHistory.filter { $0.date >= tenMinutesAgo }
+
+        guard let currentHR = recent5Min.first?.heartRate,
+              let baseline5 = recent5Min.last?.heartRate,
+              let baseline10 = recent10Min.last?.heartRate else { return }
+
+        // POTS Diagnostic Criteria #1: +30 BPM increase in 10 minutes (sustained)
+        let increase10Min = currentHR - baseline10
+        if increase10Min >= 30 && recent10Min.count >= 3 {
+            print("🚨 [iPhone] POTS pattern detected: +\(increase10Min) BPM over 10 minutes")
+            rapidIncreaseCallback?(currentHR, baseline10, 600) // 10 minutes = 600 seconds
+        }
+
+        // POTS Extreme Spike: +40 BPM increase in 5 minutes
+        let increase5Min = currentHR - baseline5
+        if increase5Min >= 40 && recent5Min.count >= 2 {
+            print("🚨 [iPhone] Extreme spike detected: +\(increase5Min) BPM over 5 minutes")
+            rapidIncreaseCallback?(currentHR, baseline5, 300) // 5 minutes = 300 seconds
+        }
+    }
+
+    private func stopPOTSMonitoring() {
+        potsCheckTimer?.invalidate()
+        potsCheckTimer = nil
+        print("🩺 [iPhone] POTS monitoring stopped")
+    }
+
     // MARK: - Emergency Monitoring
     
     private func checkEmergencyThresholds(_ heartRate: Int) {
@@ -201,15 +254,15 @@ class HealthManager: ObservableObject {
     
     private func updateHeartRateFromWatch(_ heartRate: Int) {
         print("📱 [iPhone] Updating UI with Watch heart rate: \(heartRate)")
-        
+
         // Check for emergency conditions first
         checkEmergencyThresholds(heartRate)
-        
+
         // Update current heart rate
         currentHeartRate = heartRate
         liveHeartRate = heartRate
         lastUpdated = "Just now"
-        
+
         // Add to history
         let entry = HeartRateEntry(
             heartRate: heartRate,
@@ -218,17 +271,125 @@ class HealthManager: ObservableObject {
             context: "From Apple Watch"
         )
         heartRateHistory.append(entry)
-        
-        // Limit history size
+
+        // Save to persistent storage (privacy-first local storage)
+        saveHeartRateEntryToPersistentStorage(entry)
+
+        // Limit in-memory history size (keep last 100 for UI performance)
         if heartRateHistory.count > 100 {
             heartRateHistory.removeFirst()
         }
-        
+
         print("📱 [iPhone] UI updated - current HR: \(currentHeartRate), history count: \(heartRateHistory.count)")
     }
     
+    // MARK: - Privacy-First Local Storage (60-minute history)
+
+    private let heartRateStorageKey = "SecureHeart_HeartRateHistory"
+    private let maxStorageDuration: TimeInterval = 3600 // 60 minutes
+
+    private func saveHeartRateEntryToPersistentStorage(_ entry: HeartRateEntry) {
+        // PRIVACY-FIRST: Store only in UserDefaults (local device only)
+        // NO cloud sync, NO external transmission
+        var storedEntries = loadStoredHeartRateHistory()
+        storedEntries.append(entry)
+
+        // Clean up entries older than 60 minutes
+        let cutoffDate = Date().addingTimeInterval(-maxStorageDuration)
+        storedEntries = storedEntries.filter { $0.date > cutoffDate }
+
+        // Convert to storage format
+        let storageData = storedEntries.map { entry in
+            [
+                "heartRate": entry.heartRate,
+                "timestamp": entry.date.timeIntervalSince1970,
+                "delta": entry.delta,
+                "context": entry.context ?? ""
+            ]
+        }
+
+        UserDefaults.standard.set(storageData, forKey: heartRateStorageKey)
+        print("💾 [iPhone] Saved \(storedEntries.count) heart rate entries to local storage")
+    }
+
+    private func loadStoredHeartRateHistory() -> [HeartRateEntry] {
+        guard let storageData = UserDefaults.standard.array(forKey: heartRateStorageKey) as? [[String: Any]] else {
+            return []
+        }
+
+        var entries: [HeartRateEntry] = []
+        for data in storageData {
+            guard let heartRate = data["heartRate"] as? Int,
+                  let timestamp = data["timestamp"] as? TimeInterval,
+                  let delta = data["delta"] as? Int else { continue }
+
+            let context = data["context"] as? String
+            let date = Date(timeIntervalSince1970: timestamp)
+
+            // Only include entries from last 60 minutes
+            if date > Date().addingTimeInterval(-maxStorageDuration) {
+                let entry = HeartRateEntry(
+                    heartRate: heartRate,
+                    date: date,
+                    delta: delta,
+                    context: context?.isEmpty == false ? context : nil
+                )
+                entries.append(entry)
+            }
+        }
+
+        // Sort by date (newest first)
+        return entries.sorted { $0.date > $1.date }
+    }
+
+    func loadPersistentHeartRateHistory() {
+        // Load stored heart rate history on app launch
+        let storedHistory = loadStoredHeartRateHistory()
+
+        // Merge with any existing in-memory history (avoid duplicates)
+        var combinedHistory = heartRateHistory
+
+        for storedEntry in storedHistory {
+            let isDuplicate = combinedHistory.contains { entry in
+                abs(entry.date.timeIntervalSince(storedEntry.date)) < 1.0 && entry.heartRate == storedEntry.heartRate
+            }
+
+            if !isDuplicate {
+                combinedHistory.append(storedEntry)
+            }
+        }
+
+        // Sort and limit
+        combinedHistory.sort { $0.date > $1.date }
+        if combinedHistory.count > 100 {
+            combinedHistory = Array(combinedHistory.prefix(100))
+        }
+
+        heartRateHistory = combinedHistory
+
+        if !storedHistory.isEmpty {
+            updateStatsFromHistory()
+            print("📊 [iPhone] Loaded \(storedHistory.count) entries from persistent storage")
+        }
+    }
+
+    func getFullHeartRateHistory() -> [HeartRateEntry] {
+        // Return complete 60-minute history (for export functionality)
+        return loadStoredHeartRateHistory()
+    }
+
+    func clearStoredHeartRateHistory() {
+        // Privacy function to clear all stored data
+        UserDefaults.standard.removeObject(forKey: heartRateStorageKey)
+        heartRateHistory.removeAll()
+        print("🗑️ [iPhone] Cleared all stored heart rate history")
+    }
+
     // MARK: - Request Authorization for Real Device
     func requestAuthorization() {
+        // Load any existing persistent data first
+        loadPersistentHeartRateHistory()
+
         // For real device testing - iPhone will receive data from Watch via WatchConnectivity
         // No direct HealthKit access needed on iPhone, just mark as authorized for UI
         DispatchQueue.main.async {
@@ -363,9 +524,13 @@ class HealthManager: ObservableObject {
         }
     }
     
-    // MARK: - Simplified cleanup (no-op for demo)
+    // MARK: - Cleanup
     func stopObserving() {
-        // Simplified for demo
+        stopPOTSMonitoring()
+    }
+
+    deinit {
+        stopPOTSMonitoring()
     }
     
     // MARK: - Realistic Medical Test Data Generation
@@ -373,44 +538,199 @@ class HealthManager: ObservableObject {
         heartRateHistory = []
         let now = Date()
         let calendar = Calendar.current
-        
-        // Generate data every 2-5 minutes over 24 hours for realistic density
-        var currentTime = calendar.date(byAdding: .hour, value: -24, to: now) ?? now
+
+        // Generate 30 days of data for weekly/monthly trend analysis
+        var currentTime = calendar.date(byAdding: .day, value: -30, to: now) ?? now
         let endTime = now
-        
+
         var lastHeartRate = 72 // Starting baseline
-        
+
+        print("📊 [SAMPLE] Generating 30 days of realistic POTS test data...")
+
         while currentTime < endTime {
+            let dayOfWeek = calendar.component(.weekday, from: currentTime) // 1 = Sunday, 7 = Saturday
             let hourOfDay = calendar.component(.hour, from: currentTime)
             let minuteOfHour = calendar.component(.minute, from: currentTime)
-            
+            let daysSinceStart = calendar.dateComponents([.day], from: calendar.date(byAdding: .day, value: -30, to: now)!, to: currentTime).day ?? 0
+
+            // Create weekly patterns for POTS patients
+            let weeklyStressLevel = getWeeklyStressLevel(dayOfWeek: dayOfWeek, daysElapsed: daysSinceStart)
+
             // Determine if this should be a special medical event
-            let (heartRate, context, delta) = generateMedicalEventData(
+            let (heartRate, context, delta) = generateMedicalEventDataWithWeeklyPattern(
                 hour: hourOfDay,
                 minute: minuteOfHour,
                 baseline: lastHeartRate,
-                currentTime: currentTime
+                currentTime: currentTime,
+                weeklyStress: weeklyStressLevel
             )
-            
+
             let entry = HeartRateEntry(
                 heartRate: heartRate,
                 date: currentTime,
                 delta: delta,
                 context: context
             )
-            
+
             heartRateHistory.append(entry)
             lastHeartRate = heartRate
-            
-            // Advance time by 2-5 minutes randomly for realistic spacing
-            let minutesAdvance = Int.random(in: 2...5)
+
+            // Advance time - more frequent during active hours (6am-10pm), less at night
+            let minutesAdvance: Int
+            if hourOfDay >= 6 && hourOfDay <= 22 {
+                minutesAdvance = Int.random(in: 3...8) // More frequent monitoring during active hours
+            } else {
+                minutesAdvance = Int.random(in: 15...30) // Less frequent at night
+            }
+
             currentTime = calendar.date(byAdding: .minute, value: minutesAdvance, to: currentTime) ?? currentTime
         }
-        
+
         // Sort by date (newest first for our UI)
         heartRateHistory.sort { $0.date > $1.date }
-        
-        print("📊 Generated \(heartRateHistory.count) realistic medical test data points")
+
+        print("📊 Generated \(heartRateHistory.count) realistic medical test data points over 30 days")
+
+        // Update current stats from the generated data
+        updateStatsFromHistory()
+    }
+
+    private func getWeeklyStressLevel(dayOfWeek: Int, daysElapsed: Int) -> Double {
+        // Simulate weekly patterns for POTS patients
+        // Monday (high stress/symptoms), Wed-Fri (moderate), Weekend (lower)
+
+        var baseStress: Double
+        switch dayOfWeek {
+        case 2: // Monday - "Monday flare"
+            baseStress = 0.8
+        case 3, 4: // Tuesday, Wednesday - recovering
+            baseStress = 0.6
+        case 5, 6: // Thursday, Friday - moderate
+            baseStress = 0.5
+        case 7, 1: // Saturday, Sunday - better rest days
+            baseStress = 0.3
+        default:
+            baseStress = 0.5
+        }
+
+        // Add monthly variation (some weeks worse than others)
+        let weekNumber = daysElapsed / 7
+        let monthlyModifier: Double
+        switch weekNumber {
+        case 0: // First week - baseline
+            monthlyModifier = 0.0
+        case 1: // Second week - slightly better
+            monthlyModifier = -0.1
+        case 2: // Third week - worse (hormonal/stress factors)
+            monthlyModifier = 0.2
+        case 3: // Fourth week - improving
+            monthlyModifier = -0.05
+        default:
+            monthlyModifier = 0.0
+        }
+
+        return min(1.0, max(0.0, baseStress + monthlyModifier))
+    }
+
+    private func generateMedicalEventDataWithWeeklyPattern(
+        hour: Int,
+        minute: Int,
+        baseline: Int,
+        currentTime: Date,
+        weeklyStress: Double
+    ) -> (heartRate: Int, context: String, delta: Int) {
+
+        // Base heart rate adjusted for weekly stress pattern
+        var baseHR = baseline
+        let stressModifier = Int(weeklyStress * 10) // 0-10 BPM increase based on stress
+        baseHR += stressModifier
+
+        // Time-of-day patterns
+        var timeModifier = 0
+        switch hour {
+        case 0...5: // Night - lower
+            timeModifier = -8
+        case 6...9: // Morning - POTS patients often struggle
+            timeModifier = 5
+        case 10...14: // Midday - moderate
+            timeModifier = 2
+        case 15...18: // Afternoon - varies
+            timeModifier = 0
+        case 19...23: // Evening - slightly elevated
+            timeModifier = 3
+        default:
+            timeModifier = 0
+        }
+
+        baseHR += timeModifier
+
+        // Check for orthostatic episodes (more frequent during high stress periods)
+        let episodeProbability = weeklyStress * 0.15 // 0-15% chance based on stress
+        let isEpisode = Double.random(in: 0...1) < episodeProbability
+
+        var finalHR = baseHR
+        var context = "Sitting"
+        var delta = Int.random(in: -5...8)
+
+        if isEpisode {
+            // POTS episode - severity influenced by weekly stress
+            let episodeSeverity = weeklyStress
+            let increase = Int(25 + episodeSeverity * 30) // 25-55 BPM increase
+            finalHR = baseHR + increase + Int.random(in: -5...10)
+            context = "Standing"
+            delta = increase
+        } else {
+            // Normal standing occasionally
+            if Int.random(in: 1...100) <= 20 { // 20% standing
+                context = "Standing"
+                let normalIncrease = Int.random(in: 8...18) // Normal standing response
+                finalHR = baseHR + normalIncrease
+                delta = normalIncrease
+            } else {
+                // Normal sitting variability
+                finalHR = baseHR + Int.random(in: -8...12)
+            }
+        }
+
+        // Ensure realistic bounds
+        finalHR = max(55, min(160, finalHR))
+
+        return (finalHR, context, delta)
+    }
+
+    private func updateStatsFromHistory() {
+        guard !heartRateHistory.isEmpty else { return }
+
+        // Set current heart rate to the most recent entry
+        currentHeartRate = heartRateHistory.first?.heartRate ?? 72
+
+        // Also set live heart rate for simulator so UI shows data
+        #if targetEnvironment(simulator)
+        DispatchQueue.main.async {
+            self.liveHeartRate = self.currentHeartRate
+            self.isWatchConnected = true // Simulate watch connection for better UI experience
+            print("🔧 [SIMULATOR] Setting liveHeartRate to \(self.currentHeartRate), isWatchConnected: \(self.isWatchConnected)")
+        }
+        #endif
+
+        // Calculate stats from today's data
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let todaysEntries = heartRateHistory.filter { entry in
+            entry.date >= today
+        }
+
+        if !todaysEntries.isEmpty {
+            let heartRates = todaysEntries.map { $0.heartRate }
+            averageHeartRate = heartRates.reduce(0, +) / heartRates.count
+            minHeartRate = heartRates.min() ?? 48
+            maxHeartRate = heartRates.max() ?? 162
+        }
+
+        lastUpdated = "Just now"
+        isAuthorized = true
+
+        print("📊 Updated current stats - HR: \(currentHeartRate), Avg: \(averageHeartRate), Min: \(minHeartRate), Max: \(maxHeartRate)")
     }
     
     private func generateMedicalEventData(hour: Int, minute: Int, baseline: Int, currentTime: Date) -> (heartRate: Int, context: String?, delta: Int) {

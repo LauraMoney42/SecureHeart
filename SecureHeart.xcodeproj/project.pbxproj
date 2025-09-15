@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		2799067C2E5D59D3003D9F9A /* Secure Heart Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 2799067B2E5D59D3003D9F9A /* Secure Heart Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		27B45D882E77664E00824376 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 27B45D872E77664E00824376 /* FirebaseAuth */; };
+		27B45D8A2E77664E00824376 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 27B45D892E77664E00824376 /* FirebaseFirestoreCombine-Community */; };
+		27B45D8C2E77664E00824376 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 27B45D8B2E77664E00824376 /* FirebaseFunctions */; };
+		27B45D8E2E77664E00824376 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 27B45D8D2E77664E00824376 /* FirebaseMessaging */; };
+		27B45D902E77675400824376 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 27B45D8F2E77675400824376 /* FirebaseCore */; };
+		27B45D922E77675400824376 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 27B45D912E77675400824376 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +64,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27B45D8E2E77664E00824376 /* FirebaseMessaging in Frameworks */,
+				27B45D902E77675400824376 /* FirebaseCore in Frameworks */,
+				27B45D8C2E77664E00824376 /* FirebaseFunctions in Frameworks */,
+				27B45D882E77664E00824376 /* FirebaseAuth in Frameworks */,
+				27B45D8A2E77664E00824376 /* FirebaseFirestoreCombine-Community in Frameworks */,
+				27B45D922E77675400824376 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +124,12 @@
 			);
 			name = "Secure Heart";
 			packageProductDependencies = (
+				27B45D872E77664E00824376 /* FirebaseAuth */,
+				27B45D892E77664E00824376 /* FirebaseFirestoreCombine-Community */,
+				27B45D8B2E77664E00824376 /* FirebaseFunctions */,
+				27B45D8D2E77664E00824376 /* FirebaseMessaging */,
+				27B45D8F2E77675400824376 /* FirebaseCore */,
+				27B45D912E77675400824376 /* FirebaseFirestore */,
 			);
 			productName = "Secure Heart";
 			productReference = 2799066E2E5D59D0003D9F9A /* Secure Heart.app */;
@@ -166,6 +184,9 @@
 			);
 			mainGroup = 279906652E5D59D0003D9F9A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2799066F2E5D59D0003D9F9A /* Products */;
 			projectDirPath = "";
@@ -345,11 +366,10 @@
 				DEVELOPMENT_TEAM = G6U69FC9H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Secure Heart";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app needs access to your heart rate data to display current readings and track your fitness metrics.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may write health data to HealthKit for comprehensive fitness tracking.";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.securehealthheart;
+				INFOPLIST_KEY_NSMotionUsageDescription = "Secure Heart uses motion data to detect when you're standing or sitting, which helps provide accurate heart rate context for medical monitoring. This data never leaves your device and is only used for health analysis.";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.securehealthheart";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Secure Heart reads your heart rate data to monitor for POTS episodes and other heart rate irregularities. This data is stored locally on your device for your privacy.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Secure Heart may update your heart rate data to provide context about standing/sitting positions for medical analysis.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -377,11 +397,10 @@
 				DEVELOPMENT_TEAM = G6U69FC9H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Secure Heart";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app needs access to your heart rate data to display current readings and track your fitness metrics.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may write health data to HealthKit for comprehensive fitness tracking.";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.securehealthheart;
+				INFOPLIST_KEY_NSMotionUsageDescription = "Secure Heart uses motion data to detect when you're standing or sitting, which helps provide accurate heart rate context for medical monitoring. This data never leaves your device and is only used for health analysis.";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.securehealthheart";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Secure Heart reads your heart rate data to monitor for POTS episodes and other heart rate irregularities. This data is stored locally on your device for your privacy.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Secure Heart may update your heart rate data to provide context about standing/sitting positions for medical analysis.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -497,6 +516,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		27B45D872E77664E00824376 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		27B45D892E77664E00824376 /* FirebaseFirestoreCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseFirestoreCombine-Community";
+		};
+		27B45D8B2E77664E00824376 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+		27B45D8D2E77664E00824376 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		27B45D8F2E77675400824376 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		27B45D912E77675400824376 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 27B45D862E77664E00824376 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 279906662E5D59D0003D9F9A /* Project object */;
 }

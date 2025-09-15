@@ -13,6 +13,7 @@ struct SettingsTabView: View {
     @AppStorage("lowHeartRateAlert") private var lowHeartRateAlert = 40
     @AppStorage("recordingInterval") private var recordingInterval = 60.0
     @AppStorage("darkModeEnabled") private var darkModeEnabled = false
+    @EnvironmentObject var emergencyManager: EmergencyContactsManager
     
     var body: some View {
         NavigationView {
@@ -21,6 +22,19 @@ struct SettingsTabView: View {
                     WatchStatusCard()
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
+                }
+
+                Section("Emergency Contacts") {
+                    NavigationLink("Manage Emergency Contacts") {
+                        SimplifiedEmergencyContactsView()
+                    }
+
+                    HStack {
+                        Text("Active Contacts")
+                        Spacer()
+                        Text("\(emergencyManager.contacts.count)")
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 Section("Appearance") {
@@ -32,21 +46,17 @@ struct SettingsTabView: View {
                 }
                 
                 Section("Recording Settings") {
-                    HStack {
-                        Text("Recording Interval")
-                        Spacer()
-                        Picker("Recording Interval", selection: $recordingInterval) {
-                            Text("8 seconds").tag(8.0)
-                            Text("30 seconds").tag(30.0)
-                            Text("1 minute").tag(60.0)
-                            Text("2 minutes").tag(120.0)
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .onChange(of: recordingInterval) { _, newInterval in
-                            // Send the new interval to the Apple Watch
-                            WatchConnectivityManager.shared.sendRecordingInterval(newInterval)
-                            print("📱 [iPhone] Sending recording interval to Watch: \(newInterval) seconds")
-                        }
+                    Picker("Recording Interval", selection: $recordingInterval) {
+                        Text("8 seconds").tag(8.0)
+                        Text("30 seconds").tag(30.0)
+                        Text("1 minute").tag(60.0)
+                        Text("2 minutes").tag(120.0)
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .onChange(of: recordingInterval) { _, newInterval in
+                        // Send the new interval to the Apple Watch
+                        WatchConnectivityManager.shared.sendRecordingInterval(newInterval)
+                        print("📱 [iPhone] Sending recording interval to Watch: \(newInterval) seconds")
                     }
                 }
                 
@@ -83,7 +93,6 @@ struct SettingsTabView: View {
                 }
             }
             .navigationTitle("Settings")
-            .preferredColorScheme(darkModeEnabled ? .dark : .light)
             .onAppear {
                 // Send current recording interval to Watch when settings appear
                 WatchConnectivityManager.shared.sendRecordingInterval(recordingInterval)
