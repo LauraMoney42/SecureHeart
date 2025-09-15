@@ -157,3 +157,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+# Firebase credentials
+GoogleService-Info.plist
+**/GoogleService-Info.plist
