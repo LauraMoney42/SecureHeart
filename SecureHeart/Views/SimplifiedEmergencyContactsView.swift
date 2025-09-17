@@ -28,55 +28,65 @@ struct SimplifiedEmergencyContactsView: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                // Connection Status
-                SimplifiedConnectionStatusHeader(connectionStatus: emergencyManager.connectionStatus, isLoading: emergencyManager.isLoading)
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Connection Status
+                    SimplifiedConnectionStatusHeader(connectionStatus: emergencyManager.connectionStatus, isLoading: emergencyManager.isLoading)
 
-                // User Profile Section
-                if let profile = emergencyManager.userProfile {
-                    UserProfileCard(
-                        profile: profile,
-                        onEditProfile: { showingSetupProfile = true },
-                        onLocationSettings: { showingLocationSettings = true }
-                    )
-                } else {
-                    SetupProfilePrompt { showingSetupProfile = true }
-                }
+                    // User Profile Section
+                    if let profile = emergencyManager.userProfile {
+                        UserProfileCard(
+                            profile: profile,
+                            onEditProfile: { showingSetupProfile = true },
+                            onLocationSettings: { showingLocationSettings = true }
+                        )
+                    } else {
+                        SetupProfilePrompt { showingSetupProfile = true }
+                    }
 
-                // Linked Contacts
-                if emergencyManager.linkedContacts.isEmpty {
-                    EmptyLinkedContactsView()
-                } else {
-                    LinkedContactsList(
-                        contacts: emergencyManager.linkedContacts,
-                        onLocationPermissionChanged: { contactID, shareLocationWithMe, shareMyLocationWithThem in
+                    // Linked Contacts Section with title above icon
+                    VStack(spacing: 16) {
+                        // Emergency Contacts title above the people+ graphic
+                        Text("Emergency Contacts")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if emergencyManager.linkedContacts.isEmpty {
+                            EmptyLinkedContactsView()
+                        } else {
+                            LinkedContactsList(
+                                contacts: emergencyManager.linkedContacts,
+                                onLocationPermissionChanged: { contactID, shareLocationWithMe, shareMyLocationWithThem in
+                                    Task {
+                                        try await emergencyManager.updateContactLocationPermission(
+                                            contactUserID: contactID,
+                                            shareLocationWithMe: shareLocationWithMe,
+                                            shareMyLocationWithThem: shareMyLocationWithThem
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    // Emergency Status
+                    SimplifiedEmergencyStatusCard(
+                        emergencyTriggered: emergencyManager.emergencyTriggered,
+                        lastEmergencyAlert: emergencyManager.lastEmergencyAlert,
+                        onResolve: {
                             Task {
-                                try await emergencyManager.updateContactLocationPermission(
-                                    contactUserID: contactID,
-                                    shareLocationWithMe: shareLocationWithMe,
-                                    shareMyLocationWithThem: shareMyLocationWithThem
-                                )
+                                try await emergencyManager.resolveEmergency()
                             }
                         }
                     )
+
+                    // Emergency Settings
+                    EmergencyThresholdSettingsCard()
                 }
-
-                // Emergency Status
-                SimplifiedEmergencyStatusCard(
-                    emergencyTriggered: emergencyManager.emergencyTriggered,
-                    lastEmergencyAlert: emergencyManager.lastEmergencyAlert,
-                    onResolve: {
-                        Task {
-                            try await emergencyManager.resolveEmergency()
-                        }
-                    }
-                )
-
-                // Emergency Settings
-                EmergencyThresholdSettingsCard()
+                .padding()
             }
-            .padding()
-            .navigationTitle("Emergency Contacts")
+            .navigationBarHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -247,8 +257,6 @@ struct UserProfileCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Welcome, \(profile.firstName)")
-                        .font(.headline)
                     Text("\(profile.linkedContacts.count) linked contacts")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -772,11 +780,19 @@ struct ShareSheet: UIViewControllerRepresentable {
 struct EmergencyThresholdSettingsCard: View {
     @AppStorage("emergencyHighBPM") private var highBPM: Double = 150
     @AppStorage("emergencyLowBPM") private var lowBPM: Double = 40
+    @AppStorage("highAlertEnabled") private var highAlertEnabled = true
+    @AppStorage("lowAlertEnabled") private var lowAlertEnabled = true
     @AppStorage("rapidIncreaseEnabled") private var rapidIncreaseEnabled = true
     @AppStorage("rapidIncreaseBPM") private var rapidIncreaseBPM: Double = 30
     @AppStorage("extremeSpikeEnabled") private var extremeSpikeEnabled = true
     @AppStorage("extremeSpikeBPM") private var extremeSpikeBPM: Double = 40
     @AppStorage("maxAlertsPerHour") private var maxAlertsPerHour: Double = 3
+
+    @State private var highBPMText = ""
+    @State private var lowBPMText = ""
+    @State private var rapidIncreaseBPMText = ""
+    @State private var extremeSpikeBPMText = ""
+    @State private var maxAlertsPerHourText = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -790,36 +806,62 @@ struct EmergencyThresholdSettingsCard: View {
 
             VStack(spacing: 12) {
                 // Static Thresholds
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Heart Rate Thresholds")
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.secondary)
 
-                    HStack {
-                        Text("High:")
-                        Spacer()
-                        Text("\(Int(highBPM)) BPM")
-                            .foregroundColor(.red)
-                    }
-                    Slider(value: $highBPM, in: 120...180, step: 5)
-                        .accentColor(.red)
+                    // High Alert Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Toggle("High Emergency Alert", isOn: $highAlertEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .red))
+                        }
 
-                    HStack {
-                        Text("Low:")
-                        Spacer()
-                        Text("\(Int(lowBPM)) BPM")
-                            .foregroundColor(.blue)
+                        HStack {
+                            Text("High Threshold:")
+                                .foregroundColor(highAlertEnabled ? .primary : .secondary)
+                            Spacer()
+                            TextField("150", text: $highBPMText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .frame(width: 80)
+                                .disabled(!highAlertEnabled)
+                                .opacity(highAlertEnabled ? 1.0 : 0.6)
+                            Text("BPM")
+                                .foregroundColor(highAlertEnabled ? .red : .secondary)
+                        }
                     }
-                    Slider(value: $lowBPM, in: 35...60, step: 5)
-                        .accentColor(.blue)
+
+                    // Low Alert Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Toggle("Low Emergency Alert", isOn: $lowAlertEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                        }
+
+                        HStack {
+                            Text("Low Threshold:")
+                                .foregroundColor(lowAlertEnabled ? .primary : .secondary)
+                            Spacer()
+                            TextField("40", text: $lowBPMText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .frame(width: 80)
+                                .disabled(!lowAlertEnabled)
+                                .opacity(lowAlertEnabled ? 1.0 : 0.6)
+                            Text("BPM")
+                                .foregroundColor(lowAlertEnabled ? .blue : .secondary)
+                        }
+                    }
                 }
 
                 Divider()
 
-                // POTS-Specific Settings
+                // Advanced Detection Settings
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("POTS Detection")
+                    Text("Advanced Detection")
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.secondary)
@@ -834,7 +876,17 @@ struct EmergencyThresholdSettingsCard: View {
                     }
 
                     if rapidIncreaseEnabled {
-                        Slider(value: $rapidIncreaseBPM, in: 20...50, step: 5)
+                        HStack {
+                            Text("Increase Threshold:")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            TextField("30", text: $rapidIncreaseBPMText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .frame(width: 80)
+                            Text("BPM")
+                                .foregroundColor(.orange)
+                        }
                     }
 
                     Toggle(isOn: $extremeSpikeEnabled) {
@@ -847,7 +899,17 @@ struct EmergencyThresholdSettingsCard: View {
                     }
 
                     if extremeSpikeEnabled {
-                        Slider(value: $extremeSpikeBPM, in: 30...60, step: 5)
+                        HStack {
+                            Text("Spike Threshold:")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            TextField("40", text: $extremeSpikeBPMText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .frame(width: 80)
+                            Text("BPM")
+                                .foregroundColor(.red)
+                        }
                     }
                 }
 
@@ -863,11 +925,13 @@ struct EmergencyThresholdSettingsCard: View {
                     HStack {
                         Text("Max alerts per hour:")
                         Spacer()
-                        Text("\(Int(maxAlertsPerHour))")
+                        TextField("3", text: $maxAlertsPerHourText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numberPad)
+                            .frame(width: 80)
+                        Text("alerts")
                             .foregroundColor(.orange)
                     }
-                    Slider(value: $maxAlertsPerHour, in: 1...10, step: 1)
-                        .accentColor(.orange)
                 }
             }
         }
@@ -878,5 +942,44 @@ struct EmergencyThresholdSettingsCard: View {
                 .stroke(Color(.systemGray4), lineWidth: 1)
         )
         .cornerRadius(12)
+        .onAppear {
+            // Initialize text fields with current values
+            highBPMText = String(Int(highBPM))
+            lowBPMText = String(Int(lowBPM))
+            rapidIncreaseBPMText = String(Int(rapidIncreaseBPM))
+            extremeSpikeBPMText = String(Int(extremeSpikeBPM))
+            maxAlertsPerHourText = String(Int(maxAlertsPerHour))
+        }
+        .onChange(of: highBPMText) { _, newValue in
+            if let value = Double(newValue), value >= 100, value <= 220 {
+                highBPM = value
+            }
+        }
+        .onChange(of: lowBPMText) { _, newValue in
+            if let value = Double(newValue), value >= 30, value <= 80 {
+                lowBPM = value
+            }
+        }
+        .onChange(of: rapidIncreaseBPMText) { _, newValue in
+            if let value = Double(newValue), value >= 20, value <= 60 {
+                rapidIncreaseBPM = value
+            }
+        }
+        .onChange(of: extremeSpikeBPMText) { _, newValue in
+            if let value = Double(newValue), value >= 30, value <= 80 {
+                extremeSpikeBPM = value
+            }
+        }
+        .onChange(of: maxAlertsPerHourText) { _, newValue in
+            if let value = Double(newValue), value >= 1, value <= 10 {
+                maxAlertsPerHour = value
+            }
+        }
+    }
+
+    // Helper function to validate BPM input
+    private func isValidBPM(_ value: String) -> Bool {
+        guard let bpm = Double(value) else { return false }
+        return bpm >= 30 && bpm <= 220
     }
 }

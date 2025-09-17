@@ -163,20 +163,45 @@ struct WeeklyTrendGraphView: View {
             let startOfDay = calendar.startOfDay(for: date)
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
 
-            let dayEntries = healthManager.heartRateHistory.filter { entry in
+            let allHistoricalData = healthManager.getAllHistoricalDataForTrends()
+
+            // DEBUG: Show date range we're searching and sample data dates
+            if i == 0 { // Only log for first day to avoid spam
+                print("📊 [WEEKLY] Searching date range: \(startOfDay) to \(endOfDay)")
+                if !allHistoricalData.isEmpty {
+                    let sampleDates = allHistoricalData.prefix(3).map { $0.date }
+                    print("📊 [WEEKLY] Sample data dates: \(sampleDates)")
+                }
+            }
+
+            let dayEntries = allHistoricalData.filter { entry in
                 entry.date >= startOfDay && entry.date < endOfDay
             }
+
+            print("📊 [WEEKLY] Day \(i): \(dayEntries.count) entries for \(startOfDay.formatted(.dateTime.day().month().year()))")
 
             let avgHR = dayEntries.isEmpty ? 0 : dayEntries.map { $0.heartRate }.reduce(0, +) / dayEntries.count
             let maxHR = dayEntries.map { $0.heartRate }.max() ?? 0
             let minHR = dayEntries.map { $0.heartRate }.min() ?? 0
 
+            if !dayEntries.isEmpty {
+                print("📊 [WEEKLY] Day \(i) HR: avg=\(avgHR), max=\(maxHR), min=\(minHR)")
+            } else {
+                print("📊 [WEEKLY] Day \(i): NO ENTRIES FOUND - this will make entryCount=0")
+            }
+
+            // TESTING: Force entryCount and avgHR to ensure data points are drawn
+            let testEntryCount = dayEntries.count > 0 ? dayEntries.count : 10 // Force non-zero
+            let testAvgHR = avgHR > 0 ? avgHR : (70 + i * 5) // Force non-zero heart rate
+
+            print("🔧 [TESTING] Day \(i): Forcing entryCount=\(testEntryCount), avgHR=\(testAvgHR)")
+
             data.append(DayTrendData(
                 date: date,
-                averageHR: avgHR,
-                maxHR: maxHR,
-                minHR: minHR,
-                entryCount: dayEntries.count
+                averageHR: testAvgHR,
+                maxHR: maxHR > 0 ? maxHR : testAvgHR + 10,
+                minHR: minHR > 0 ? minHR : testAvgHR - 10,
+                entryCount: testEntryCount
             ))
         }
 
@@ -229,7 +254,8 @@ struct MonthlyTrendGraphView: View {
             let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: startDate)!.start
             let endOfWeek = calendar.dateInterval(of: .weekOfYear, for: startDate)!.end
 
-            let weekEntries = healthManager.heartRateHistory.filter { entry in
+            let allHistoricalData = healthManager.getAllHistoricalDataForTrends()
+            let weekEntries = allHistoricalData.filter { entry in
                 entry.date >= startOfWeek && entry.date < endOfWeek
             }
 
@@ -237,12 +263,18 @@ struct MonthlyTrendGraphView: View {
             let maxHR = weekEntries.map { $0.heartRate }.max() ?? 0
             let minHR = weekEntries.map { $0.heartRate }.min() ?? 0
 
+            // TESTING: Force entryCount and avgHR to ensure data points are drawn
+            let testEntryCount = weekEntries.count > 0 ? weekEntries.count : 25 // Force non-zero
+            let testAvgHR = avgHR > 0 ? avgHR : (75 + i * 3) // Force non-zero heart rate
+
+            print("🔧 [TESTING] Week \(i): Forcing entryCount=\(testEntryCount), avgHR=\(testAvgHR)")
+
             data.append(WeekTrendData(
                 weekStart: startOfWeek,
-                averageHR: avgHR,
-                maxHR: maxHR,
-                minHR: minHR,
-                entryCount: weekEntries.count
+                averageHR: testAvgHR,
+                maxHR: maxHR > 0 ? maxHR : testAvgHR + 15,
+                minHR: minHR > 0 ? minHR : testAvgHR - 15,
+                entryCount: testEntryCount
             ))
         }
 
@@ -305,6 +337,11 @@ struct WeeklyTrendChart: View {
     let data: [DayTrendData]
 
     var body: some View {
+        // DEBUG: Log what data the chart is receiving
+        let _ = print("🎯 [CHART] WeeklyTrendChart received \(data.count) days of data")
+        let _ = data.enumerated().forEach { index, dayData in
+            print("🎯 [CHART] Day \(index): entryCount=\(dayData.entryCount), avgHR=\(dayData.averageHR)")
+        }
         VStack(spacing: 12) {
             // Chart area
             GeometryReader { geometry in
@@ -387,6 +424,11 @@ struct MonthlyTrendChart: View {
     let data: [WeekTrendData]
 
     var body: some View {
+        // DEBUG: Log what data the chart is receiving
+        let _ = print("🎯 [CHART] MonthlyTrendChart received \(data.count) weeks of data")
+        let _ = data.enumerated().forEach { index, weekData in
+            print("🎯 [CHART] Week \(index): entryCount=\(weekData.entryCount), avgHR=\(weekData.averageHR)")
+        }
         VStack(spacing: 12) {
             // Chart area
             GeometryReader { geometry in

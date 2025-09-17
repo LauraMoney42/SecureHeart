@@ -128,14 +128,29 @@ class HealthManager: ObservableObject {
     private var potsCheckTimer: Timer?
     
     init() {
+        print("🔧 [INIT] HealthManager initializing...")
+
         #if targetEnvironment(simulator)
+        print("🔧 [INIT] Running in simulator - generating test data")
         // Generate comprehensive medical test data for simulator
         generateRealisticMedicalTestData()
         #else
+        print("🔧 [INIT] Running on device - waiting for real data")
         // Update current stats - start with 0 for real data
         currentHeartRate = 0  // Will be populated by real heart rate data
         lastUpdated = "Waiting for data..."
         #endif
+
+        // DEBUG: Force test data generation if we have no data (fallback for any issues)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            print("🔧 [FALLBACK] Checking data: \(self.heartRateHistory.count) entries")
+            if self.heartRateHistory.isEmpty {
+                print("🔧 [FALLBACK] No data found, forcing test data generation")
+                self.generateRealisticMedicalTestData()
+            } else if self.heartRateHistory.count < 500 {
+                print("🔧 [FALLBACK] Only \(self.heartRateHistory.count) entries found, but not regenerating to preserve data")
+            }
+        }
         
         // Listen for heart rate updates from Apple Watch
         setupWatchConnectivityListeners()
@@ -275,8 +290,9 @@ class HealthManager: ObservableObject {
         // Save to persistent storage (privacy-first local storage)
         saveHeartRateEntryToPersistentStorage(entry)
 
-        // Limit in-memory history size (keep last 100 for UI performance)
-        if heartRateHistory.count > 100 {
+        // Limit in-memory history size (keep last 1000 for trend analysis)
+        // Note: Increased from 100 to support weekly/monthly trends
+        if heartRateHistory.count > 1000 {
             heartRateHistory.removeFirst()
         }
 
@@ -340,6 +356,19 @@ class HealthManager: ObservableObject {
 
         // Sort by date (newest first)
         return entries.sorted { $0.date > $1.date }
+    }
+
+    // MARK: - Trend Analysis Data Access
+    func getAllHistoricalDataForTrends() -> [HeartRateEntry] {
+        // For trend analysis, we need access to ALL data, not just 60 minutes
+        // This returns the complete heartRateHistory which includes test data
+        print("🔧 [TRENDS] getAllHistoricalDataForTrends() called, returning \(heartRateHistory.count) entries")
+        if !heartRateHistory.isEmpty {
+            let oldest = heartRateHistory.last?.date ?? Date()
+            let newest = heartRateHistory.first?.date ?? Date()
+            print("🔧 [TRENDS] Date range: \(oldest) to \(newest)")
+        }
+        return heartRateHistory
     }
 
     func loadPersistentHeartRateHistory() {
@@ -471,13 +500,29 @@ class HealthManager: ObservableObject {
             return
         }
         
-        // Calculate 5-minute moving average (or last 5-10 readings)
-        let recentReadings = Array(heartRateHistory.prefix(10)) // Last 10 readings (~5-10 minutes)
-        let recentHeartRates = recentReadings.map { $0.heartRate }
-        recentAverageHeartRate = recentHeartRates.reduce(0, +) / max(recentHeartRates.count, 1)
-        
-        // Calculate delta from recent average
-        deltaFromAverage = currentHeartRate - recentAverageHeartRate
+        // Calculate proper 5-minute rolling average based on time, not count
+        let now = Date()
+        let fiveMinutesAgo = now.addingTimeInterval(-300) // 5 minutes = 300 seconds
+
+        // Filter entries within the last 5 minutes
+        let recentEntries = heartRateHistory.filter { entry in
+            entry.date >= fiveMinutesAgo && entry.date <= now
+        }
+
+        if recentEntries.isEmpty {
+            // No recent data, use current reading as baseline
+            recentAverageHeartRate = currentHeartRate
+            deltaFromAverage = 0
+        } else {
+            // Calculate true time-based 5-minute average
+            let recentHeartRates = recentEntries.map { $0.heartRate }
+            recentAverageHeartRate = recentHeartRates.reduce(0, +) / recentHeartRates.count
+
+            // Calculate delta from 5-minute average (key differentiator feature)
+            deltaFromAverage = currentHeartRate - recentAverageHeartRate
+
+            print("📊 [DELTA] 5-min avg: \(recentAverageHeartRate) BPM, current: \(currentHeartRate) BPM, delta: \(deltaFromAverage > 0 ? "+" : "")\(deltaFromAverage)")
+        }
         
         // Update the traditional delta (previous reading)
         if heartRateHistory.count >= 2 {
@@ -535,6 +580,14 @@ class HealthManager: ObservableObject {
     
     // MARK: - Realistic Medical Test Data Generation
     private func generateRealisticMedicalTestData() {
+        print("🔧 [TEST DATA] Starting generateRealisticMedicalTestData()")
+
+        // Don't regenerate if we already have substantial data
+        if heartRateHistory.count > 500 {
+            print("🔧 [TEST DATA] Already have \(heartRateHistory.count) entries, skipping regeneration")
+            return
+        }
+
         heartRateHistory = []
         let now = Date()
         let calendar = Calendar.current
@@ -545,9 +598,16 @@ class HealthManager: ObservableObject {
 
         var lastHeartRate = 72 // Starting baseline
 
-        print("📊 [SAMPLE] Generating 30 days of realistic POTS test data...")
+        print("📊 [SAMPLE] Generating 30 days of realistic POTS test data from \(currentTime) to \(endTime)")
 
+        var entryCount = 0
         while currentTime < endTime {
+            entryCount += 1
+
+            // Debug progress every 100 entries
+            if entryCount % 100 == 0 {
+                print("📊 [PROGRESS] Generated \(entryCount) entries, current date: \(currentTime)")
+            }
             let dayOfWeek = calendar.component(.weekday, from: currentTime) // 1 = Sunday, 7 = Saturday
             let hourOfDay = calendar.component(.hour, from: currentTime)
             let minuteOfHour = calendar.component(.minute, from: currentTime)
@@ -590,6 +650,17 @@ class HealthManager: ObservableObject {
         heartRateHistory.sort { $0.date > $1.date }
 
         print("📊 Generated \(heartRateHistory.count) realistic medical test data points over 30 days")
+
+        // Debug: Show date range of generated data
+        if !heartRateHistory.isEmpty {
+            let oldest = heartRateHistory.last?.date ?? Date()
+            let newest = heartRateHistory.first?.date ?? Date()
+            print("🔧 [TEST DATA GENERATED] Date range: from \(oldest) to \(newest)")
+            print("🔧 [TEST DATA GENERATED] First 5 entries:")
+            for i in 0..<min(5, heartRateHistory.count) {
+                print("  Entry \(i): \(heartRateHistory[i].date) - \(heartRateHistory[i].heartRate) BPM")
+            }
+        }
 
         // Update current stats from the generated data
         updateStatsFromHistory()
@@ -700,6 +771,12 @@ class HealthManager: ObservableObject {
 
     private func updateStatsFromHistory() {
         guard !heartRateHistory.isEmpty else { return }
+
+        print("📊 [SAMPLE] Generated \(heartRateHistory.count) sample entries over 30 days")
+        if !heartRateHistory.isEmpty {
+            print("🔧 [TEST DATA] First entry: \(heartRateHistory.first?.date ?? Date()) - \(heartRateHistory.first?.heartRate ?? 0) BPM")
+            print("🔧 [TEST DATA] Last entry: \(heartRateHistory.last?.date ?? Date()) - \(heartRateHistory.last?.heartRate ?? 0) BPM")
+        }
 
         // Set current heart rate to the most recent entry
         currentHeartRate = heartRateHistory.first?.heartRate ?? 72

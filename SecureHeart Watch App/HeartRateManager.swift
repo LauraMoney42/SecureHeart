@@ -786,7 +786,7 @@ class HeartRateManager: NSObject, ObservableObject {
         // Calculate delta from previous reading
         if previousHeartRate > 0 {
             heartRateDelta = newRate - previousHeartRate
-            
+
             // Check for significant changes
             checkForSignificantChange(newRate)
         }

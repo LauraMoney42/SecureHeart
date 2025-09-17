@@ -29,10 +29,10 @@ struct HeartRateCard: View {
                 
                 // BPM display with reorganized layout
                 VStack(alignment: .center, spacing: 16) {
+                    let heartRate = healthManager.liveHeartRate > 0 ? healthManager.liveHeartRate : healthManager.currentHeartRate
+
                     // Main row: Heart rate number, BPM, and Status on same line
                     HStack(alignment: .bottom, spacing: 12) {
-                        let heartRate = healthManager.liveHeartRate > 0 ? healthManager.liveHeartRate : healthManager.currentHeartRate
-
                         if heartRate == 0 {
                             Text("--")
                                 .font(.system(size: 48, weight: .bold, design: .rounded))
@@ -53,6 +53,24 @@ struct HeartRateCard: View {
                             .fontWeight(.medium)
                             .foregroundColor(getZoneColor())
                             .padding(.bottom, 8)
+                    }
+
+                    // Delta display with arrows (Key differentiator feature)
+                    if heartRate > 0 && healthManager.recentAverageHeartRate > 0 && abs(healthManager.deltaFromAverage) >= 5 {
+                        HStack(spacing: 4) {
+                            Text(getDeltaArrow())
+                                .font(.title2)
+                                .foregroundColor(getDeltaColor())
+
+                            Text("\(abs(healthManager.deltaFromAverage)) vs 5-min avg")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(getDeltaColor())
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(getDeltaColor().opacity(0.1))
+                        .cornerRadius(8)
                     }
 
                     // LIVE indicator positioned at bottom right of this section
@@ -137,6 +155,27 @@ struct HeartRateCard: View {
             return .red
         default:
             return .purple
+        }
+    }
+
+    // MARK: - Delta Monitoring Display (Key Differentiator)
+
+    private func getDeltaArrow() -> String {
+        if healthManager.deltaFromAverage > 0 {
+            return "↑" // Up arrow for increase
+        } else {
+            return "↓" // Down arrow for decrease
+        }
+    }
+
+    private func getDeltaColor() -> Color {
+        let delta = abs(healthManager.deltaFromAverage)
+        if delta >= 30 {
+            return .red // Significant change (POTS threshold)
+        } else if delta >= 15 {
+            return .orange // Moderate change
+        } else {
+            return .blue // Minor change
         }
     }
 }

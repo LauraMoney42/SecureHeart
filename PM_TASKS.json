@@ -1,0 +1,146 @@
+{
+  "project": "SecureHeart MVP1",
+  "timestamp": "2025-09-16T23:40:00Z",
+  "pm_status": "monitoring",
+  "developer_status": "completed_graph_tasks",
+  "current_priority": "add_export_and_spike_detection_features",
+
+  "tasks": [
+    {
+      "id": "TASK_001",
+      "title": "Add CSV Export for Weekly/Monthly Trends",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Implement CSV export functionality for weekly and monthly heart rate data",
+      "location": "iPhone App - Data Tab (Weekly/Monthly views)",
+      "requirements": [
+        "Add export button to weekly trend view",
+        "Add export button to monthly trend view",
+        "Generate CSV with columns: Date, Time, Heart Rate (BPM), Zone, Anomaly_Type, Anomaly_Severity",
+        "Include proper CSV headers and formatting",
+        "Add separate 'Export Anomalies Only' option for medical analysis",
+        "Use iOS share sheet for export (email, save to files, etc.)",
+        "Show export progress indicator for large datasets"
+      ],
+      "acceptance_criteria": [
+        "Export buttons visible and functional on weekly/monthly views",
+        "CSV files properly formatted with correct data including anomaly data",
+        "Separate anomaly-only export generates focused medical reports",
+        "iOS share sheet integration working",
+        "Export includes all data points for selected time period",
+        "File naming: SecureHeart_Weekly_YYYY-MM-DD.csv, SecureHeart_Anomalies_YYYY-MM-DD.csv"
+      ]
+    },
+    {
+      "id": "TASK_002",
+      "title": "Add PDF Export for Weekly/Monthly Trends",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Implement PDF export functionality for weekly and monthly heart rate trend reports",
+      "location": "iPhone App - Data Tab (Weekly/Monthly views)",
+      "requirements": [
+        "Generate PDF reports with trend graphs",
+        "Include summary statistics (avg, min, max, spikes detected)",
+        "Add professional report header with date range",
+        "Include heart rate zones analysis",
+        "Add dedicated 'Anomalies Detected' section with details",
+        "Include anomaly timeline and severity breakdown",
+        "Add separate 'Anomaly Report' PDF option for medical consultations",
+        "Use iOS share sheet for PDF export",
+        "Optimize PDF for both viewing and printing"
+      ],
+      "acceptance_criteria": [
+        "PDF exports contain clear, readable trend graphs with anomalies highlighted",
+        "Summary statistics include anomaly counts and patterns",
+        "Dedicated anomaly section with medical-grade detail",
+        "Separate anomaly-focused PDF for doctor visits",
+        "Professional report layout with SecureHeart branding",
+        "PDF optimized for medical record sharing",
+        "File naming: SecureHeart_Report_Weekly_YYYY-MM-DD.pdf, SecureHeart_AnomalyReport_YYYY-MM-DD.pdf"
+      ]
+    },
+    {
+      "id": "TASK_003",
+      "title": "Implement Heart Rate Spike Detection and Analysis",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Add intelligent spike detection with filter options based on Apple Health app approach",
+      "location": "iPhone App - Data Tab, add new 'Anomalies' filter section",
+      "requirements": [
+        "Detect significant spikes: >30 BPM increase in <5 minutes",
+        "Detect significant drops: >25 BPM decrease in <5 minutes",
+        "Detect sustained highs: >90% max HR for >10 minutes",
+        "Detect unusual lows: <40 BPM when not sleeping",
+        "Add 'Show Anomalies Only' filter toggle to existing graphs",
+        "Highlight detected spikes/anomalies with red markers on graphs",
+        "Add anomaly count badge to Data tab when anomalies detected"
+      ],
+      "acceptance_criteria": [
+        "Spike detection algorithm accurately identifies anomalies",
+        "Filter toggle shows/hides normal readings vs anomalies only",
+        "Anomalies clearly marked with visual indicators",
+        "Detection parameters configurable in Settings",
+        "Anomaly detection works on daily, weekly, and monthly views"
+      ]
+    },
+    {
+      "id": "TASK_004",
+      "title": "Replace Emergency Alert Threshold Sliders with Text Entry",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Convert slider controls to text input fields for emergency alert thresholds",
+      "completion_notes": "Successfully replaced sliders with text inputs including BPM validation (30-220)"
+    },
+    {
+      "id": "TASK_005",
+      "title": "Add Enable/Disable Options for Emergency Alerts",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Add toggle switches to enable/disable high and low emergency alerts separately",
+      "completion_notes": "Added toggle switches for enable/disable with proper visual states and persistence"
+    },
+    {
+      "id": "TASK_003",
+      "title": "Emergency Contact Screen UI Layout",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Resolved overlapping visuals and layout issues on Emergency Contact screen",
+      "location": "iPhone App - Emergency Contacts Screen/Tab",
+      "completion_notes": "Successfully completed: removed 'Welcome, User' text, moved title above people+ graphic, fixed overlapping elements with ScrollView, added proper scrolling"
+    },
+    {
+      "id": "TASK_004",
+      "title": "Verify Graph Features Implementation",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Weekly and Monthly trend graphs implementation completed",
+      "location": "iPhone App - Data Tab",
+      "completion_notes": "Developer reported completion of weekly/monthly graph features"
+    }
+  ],
+
+  "current_app_state": {
+    "build_status": "successful",
+    "app_running": true,
+    "current_heart_rate": "160 BPM",
+    "display_color": "orange (high)",
+    "live_data": true,
+    "missing_features": ["delta_monitoring"]
+  },
+
+  "pm_notes": [
+    "App successfully building and running as of 3:18 PM",
+    "Core heart rate monitoring working correctly",
+    "Delta monitoring is the final feature needed for MVP1 completion",
+    "Product Strategy emphasizes this as key differentiator vs TachyMon"
+  ],
+
+  "next_pm_check": "2025-09-15T22:25:00Z"
+}
