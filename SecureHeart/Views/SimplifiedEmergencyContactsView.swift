@@ -787,11 +787,6 @@ struct EmergencyThresholdSettingsCard: View {
     @AppStorage("extremeSpikeBPM") private var extremeSpikeBPM: Double = 40
     @AppStorage("maxAlertsPerHour") private var maxAlertsPerHour: Double = 3
 
-    @State private var highBPMText = ""
-    @State private var lowBPMText = ""
-    @State private var rapidIncreaseBPMText = ""
-    @State private var extremeSpikeBPMText = ""
-    @State private var maxAlertsPerHourText = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -819,17 +814,25 @@ struct EmergencyThresholdSettingsCard: View {
                         }
 
                         HStack {
-                            Text("High Threshold:")
-                                .foregroundColor(highAlertEnabled ? .primary : .secondary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("High Threshold:")
+                                    .foregroundColor(highAlertEnabled ? .primary : .secondary)
+                                Text("Emergency alert trigger")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                             Spacer()
-                            TextField("150", text: $highBPMText)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                                .disabled(!highAlertEnabled)
-                                .opacity(highAlertEnabled ? 1.0 : 0.6)
-                            Text("BPM")
-                                .foregroundColor(highAlertEnabled ? .red : .secondary)
+
+                            VStack {
+                                Text("\(Int(highBPM)) BPM")
+                                    .font(.headline)
+                                    .foregroundColor(highAlertEnabled ? .red : .secondary)
+
+                                Stepper("", value: $highBPM, in: 90...250, step: 10)
+                                    .labelsHidden()
+                                    .disabled(!highAlertEnabled)
+                                    .opacity(highAlertEnabled ? 1.0 : 0.6)
+                            }
                         }
                     }
 
@@ -841,17 +844,25 @@ struct EmergencyThresholdSettingsCard: View {
                         }
 
                         HStack {
-                            Text("Low Threshold:")
-                                .foregroundColor(lowAlertEnabled ? .primary : .secondary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Low Threshold:")
+                                    .foregroundColor(lowAlertEnabled ? .primary : .secondary)
+                                Text("Emergency alert trigger")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                             Spacer()
-                            TextField("40", text: $lowBPMText)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                                .disabled(!lowAlertEnabled)
-                                .opacity(lowAlertEnabled ? 1.0 : 0.6)
-                            Text("BPM")
-                                .foregroundColor(lowAlertEnabled ? .blue : .secondary)
+
+                            VStack {
+                                Text("\(Int(lowBPM)) BPM")
+                                    .font(.headline)
+                                    .foregroundColor(lowAlertEnabled ? .blue : .secondary)
+
+                                Stepper("", value: $lowBPM, in: 25...90, step: 10)
+                                    .labelsHidden()
+                                    .disabled(!lowAlertEnabled)
+                                    .opacity(lowAlertEnabled ? 1.0 : 0.6)
+                            }
                         }
                     }
                 }
@@ -876,15 +887,23 @@ struct EmergencyThresholdSettingsCard: View {
 
                     if rapidIncreaseEnabled {
                         HStack {
-                            Text("Increase Threshold:")
-                                .foregroundColor(.primary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Increase Threshold:")
+                                    .foregroundColor(.primary)
+                                Text("BPM increase in 10 minutes")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                             Spacer()
-                            TextField("30", text: $rapidIncreaseBPMText)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                            Text("BPM")
-                                .foregroundColor(.orange)
+
+                            VStack {
+                                Text("+\(Int(rapidIncreaseBPM)) BPM")
+                                    .font(.headline)
+                                    .foregroundColor(.orange)
+
+                                Stepper("", value: $rapidIncreaseBPM, in: 20...100, step: 10)
+                                    .labelsHidden()
+                            }
                         }
                     }
 
@@ -899,15 +918,23 @@ struct EmergencyThresholdSettingsCard: View {
 
                     if extremeSpikeEnabled {
                         HStack {
-                            Text("Spike Threshold:")
-                                .foregroundColor(.primary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Spike Threshold:")
+                                    .foregroundColor(.primary)
+                                Text("BPM spike in 5 minutes")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                             Spacer()
-                            TextField("40", text: $extremeSpikeBPMText)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                            Text("BPM")
-                                .foregroundColor(.red)
+
+                            VStack {
+                                Text("+\(Int(extremeSpikeBPM)) BPM")
+                                    .font(.headline)
+                                    .foregroundColor(.red)
+
+                                Stepper("", value: $extremeSpikeBPM, in: 30...100, step: 10)
+                                    .labelsHidden()
+                            }
                         }
                     }
                 }
@@ -924,10 +951,12 @@ struct EmergencyThresholdSettingsCard: View {
                     HStack {
                         Text("Max alerts per hour:")
                         Spacer()
-                        TextField("3", text: $maxAlertsPerHourText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .keyboardType(.numberPad)
-                            .frame(width: 80)
+                        Text("\(Int(maxAlertsPerHour))")
+                            .foregroundColor(.blue)
+                            .fontWeight(.medium)
+                            .frame(width: 30)
+                        Stepper("", value: $maxAlertsPerHour, in: 1...20, step: 1)
+                            .labelsHidden()
                         Text("alerts")
                             .foregroundColor(.orange)
                     }
@@ -942,37 +971,7 @@ struct EmergencyThresholdSettingsCard: View {
         )
         .cornerRadius(12)
         .onAppear {
-            // Initialize text fields with current values
-            highBPMText = String(Int(highBPM))
-            lowBPMText = String(Int(lowBPM))
-            rapidIncreaseBPMText = String(Int(rapidIncreaseBPM))
-            extremeSpikeBPMText = String(Int(extremeSpikeBPM))
-            maxAlertsPerHourText = String(Int(maxAlertsPerHour))
-        }
-        .onChange(of: highBPMText) { _, newValue in
-            if let value = Double(newValue), value >= 100, value <= 220 {
-                highBPM = value
-            }
-        }
-        .onChange(of: lowBPMText) { _, newValue in
-            if let value = Double(newValue), value >= 30, value <= 80 {
-                lowBPM = value
-            }
-        }
-        .onChange(of: rapidIncreaseBPMText) { _, newValue in
-            if let value = Double(newValue), value >= 20, value <= 60 {
-                rapidIncreaseBPM = value
-            }
-        }
-        .onChange(of: extremeSpikeBPMText) { _, newValue in
-            if let value = Double(newValue), value >= 30, value <= 80 {
-                extremeSpikeBPM = value
-            }
-        }
-        .onChange(of: maxAlertsPerHourText) { _, newValue in
-            if let value = Double(newValue), value >= 1, value <= 10 {
-                maxAlertsPerHour = value
-            }
+            // Initialize text fields with current values (for remaining text fields)
         }
     }
 

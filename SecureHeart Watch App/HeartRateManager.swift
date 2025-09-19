@@ -61,6 +61,7 @@ class HeartRateManager: NSObject, ObservableObject {
     
     // Recording interval (configurable via settings)
     @Published var recordingInterval: TimeInterval = 60.0
+    private var lastRecordedTime: Date? = nil
     
     struct HeartRateReading: Identifiable {
         let id = UUID()
@@ -767,14 +768,31 @@ class HeartRateManager: NSObject, ObservableObject {
         if currentHeartRate > 0 {
             previousHeartRate = currentHeartRate
         }
-        
+
         // Update current rate
         currentHeartRate = newRate
-        
-        // Send to iPhone via WatchConnectivity
-        print("📱 [WATCH] Sending heart rate \(newRate) to iPhone with delta \(heartRateDelta)")
-        WatchConnectivityManager.shared.sendHeartRateUpdate(heartRate: newRate, delta: heartRateDelta, isStanding: isStanding)
-        
+
+        // Check if enough time has passed since last recording
+        let now = Date()
+        let shouldRecord: Bool
+
+        if let lastTime = lastRecordedTime {
+            let timeSinceLastRecord = now.timeIntervalSince(lastTime)
+            shouldRecord = timeSinceLastRecord >= recordingInterval
+        } else {
+            // First reading, always record
+            shouldRecord = true
+        }
+
+        // Only send to iPhone if interval has passed or it's a significant change
+        if shouldRecord || abs(heartRateDelta) >= minorChangeThreshold {
+            print("📱 [WATCH] Sending heart rate \(newRate) to iPhone with delta \(heartRateDelta) (interval: \(shouldRecord), significant: \(abs(heartRateDelta) >= minorChangeThreshold))")
+            WatchConnectivityManager.shared.sendHeartRateUpdate(heartRate: newRate, delta: heartRateDelta, isStanding: isStanding)
+            lastRecordedTime = now
+        } else {
+            print("⏰ [WATCH] Skipping heart rate update (waiting for interval)")
+        }
+
         // Check for orthostatic response
         checkOrthostaticResponse(heartRate: newRate)
         

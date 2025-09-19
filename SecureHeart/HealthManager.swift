@@ -130,6 +130,9 @@ class HealthManager: ObservableObject {
     init() {
         print("🔧 [INIT] HealthManager initializing...")
 
+        // Clean up any duplicate data on startup
+        cleanupDuplicatesInStoredData()
+
         // COMMENTED OUT FOR PHYSICAL TESTING - NO TEST DATA GENERATION
         /*
         #if targetEnvironment(simulator)
@@ -242,28 +245,36 @@ class HealthManager: ObservableObject {
     }
 
     // MARK: - Emergency Monitoring
-    
+
     private func checkEmergencyThresholds(_ heartRate: Int) {
-        let isHighRisk = heartRate > 150 || heartRate < 40
-        
+        // Get user-configured thresholds with medical safety defaults
+        let highThreshold = UserDefaults.standard.object(forKey: "highHeartRateAlert") as? Int ?? 150
+        let lowThreshold = UserDefaults.standard.object(forKey: "lowHeartRateAlert") as? Int ?? 40
+
+        // Enforce medical safety limits at runtime (additional protection)
+        let safeHighThreshold = max(90, min(250, highThreshold))
+        let safeLowThreshold = max(25, min(90, lowThreshold))
+
+        let isHighRisk = heartRate > safeHighThreshold || heartRate < safeLowThreshold
+
         if isHighRisk {
-            if heartRate > 150 {
+            if heartRate > safeHighThreshold {
                 consecutiveHighReadings += 1
                 consecutiveLowReadings = 0
-                
+
                 // Trigger emergency after 2 consecutive high readings to avoid false positives
                 if consecutiveHighReadings >= 2 {
-                    print("🚨 [iPhone] Emergency threshold exceeded: \(heartRate) BPM (high)")
+                    print("🚨 [iPhone] Emergency threshold exceeded: \(heartRate) BPM > \(safeHighThreshold) BPM (high)")
                     emergencyThresholdCallback?(heartRate)
                     consecutiveHighReadings = 0 // Reset to avoid repeated triggers
                 }
-            } else if heartRate < 40 {
+            } else if heartRate < safeLowThreshold {
                 consecutiveLowReadings += 1
                 consecutiveHighReadings = 0
-                
+
                 // Trigger emergency after 2 consecutive low readings
                 if consecutiveLowReadings >= 2 {
-                    print("🚨 [iPhone] Emergency threshold exceeded: \(heartRate) BPM (low)")
+                    print("🚨 [iPhone] Emergency threshold exceeded: \(heartRate) BPM < \(safeLowThreshold) BPM (low)")
                     emergencyThresholdCallback?(heartRate)
                     consecutiveLowReadings = 0 // Reset to avoid repeated triggers
                 }
@@ -316,7 +327,18 @@ class HealthManager: ObservableObject {
         // PRIVACY-FIRST: Store only in UserDefaults (local device only)
         // NO cloud sync, NO external transmission
         var storedEntries = loadStoredHeartRateHistory()
-        storedEntries.append(entry)
+
+        // Check for duplicates (same heart rate within 5 seconds)
+        let isDuplicate = storedEntries.contains { existing in
+            abs(existing.date.timeIntervalSince(entry.date)) < 5.0 &&
+            existing.heartRate == entry.heartRate
+        }
+
+        if !isDuplicate {
+            storedEntries.append(entry)
+        } else {
+            print("⚠️ [iPhone] Skipping duplicate entry: \(entry.heartRate) BPM at \(entry.date)")
+        }
 
         // Clean up entries older than 60 minutes
         let cutoffDate = Date().addingTimeInterval(-maxStorageDuration)
@@ -420,6 +442,46 @@ class HealthManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: heartRateStorageKey)
         heartRateHistory.removeAll()
         print("🗑️ [iPhone] Cleared all stored heart rate history")
+    }
+
+    func cleanupDuplicatesInStoredData() {
+        // Load existing data
+        var storedEntries = loadStoredHeartRateHistory()
+        let originalCount = storedEntries.count
+
+        // Sort by date
+        storedEntries.sort { $0.date < $1.date }
+
+        // Remove duplicates (keep only entries that are at least 30 seconds apart)
+        var cleanedEntries: [HeartRateEntry] = []
+        var lastAddedDate: Date?
+
+        for entry in storedEntries {
+            if let lastDate = lastAddedDate {
+                // Only add if at least 30 seconds have passed since last entry
+                if entry.date.timeIntervalSince(lastDate) >= 30.0 {
+                    cleanedEntries.append(entry)
+                    lastAddedDate = entry.date
+                }
+            } else {
+                // First entry
+                cleanedEntries.append(entry)
+                lastAddedDate = entry.date
+            }
+        }
+
+        // Save cleaned data
+        let storageData = cleanedEntries.map { entry in
+            [
+                "heartRate": entry.heartRate,
+                "timestamp": entry.date.timeIntervalSince1970,
+                "delta": entry.delta,
+                "context": entry.context ?? ""
+            ]
+        }
+
+        UserDefaults.standard.set(storageData, forKey: heartRateStorageKey)
+        print("🧹 [iPhone] Cleaned duplicates: \(originalCount) entries → \(cleanedEntries.count) entries")
     }
 
     // MARK: - Request Authorization for Real Device

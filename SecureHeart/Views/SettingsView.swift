@@ -61,17 +61,65 @@ struct SettingsTabView: View {
                 }
                 
                 Section("Heart Rate Alerts") {
-                    HStack {
-                        Text("High Heart Rate")
-                        Spacer()
-                        Text("\(highHeartRateAlert) BPM")
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Emergency Alert Thresholds")
+                            .font(.headline)
+                        Text("Set heart rate values that will trigger emergency notifications to your contacts.")
+                            .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    
-                    HStack {
-                        Text("Low Heart Rate")
-                        Spacer()
-                        Text("\(lowHeartRateAlert) BPM")
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("High Threshold")
+                                Text("Emergency alert for high heart rate")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+
+                            VStack {
+                                Text("\(highHeartRateAlert) BPM")
+                                    .font(.headline)
+                                    .foregroundColor(.red)
+
+                                Stepper("", value: $highHeartRateAlert, in: 90...250, step: 5)
+                                    .labelsHidden()
+                                    .onChange(of: highHeartRateAlert) { _, _ in
+                                        validateHeartRateThresholds()
+                                    }
+                            }
+                        }
+                        Text("Range: 90-250 BPM (tachycardia to emergency)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Low Threshold")
+                                Text("Emergency alert for low heart rate")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+
+                            VStack {
+                                Text("\(lowHeartRateAlert) BPM")
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+
+                                Stepper("", value: $lowHeartRateAlert, in: 25...90, step: 5)
+                                    .labelsHidden()
+                                    .onChange(of: lowHeartRateAlert) { _, _ in
+                                        validateHeartRateThresholds()
+                                    }
+                            }
+                        }
+                        Text("Range: 25-90 BPM (severe bradycardia to normal)")
+                            .font(.caption2)
                             .foregroundColor(.secondary)
                     }
                 }
@@ -99,6 +147,22 @@ struct SettingsTabView: View {
                 print("📱 [iPhone] Sent initial recording interval to Watch: \(recordingInterval) seconds")
             }
         }
+    }
+
+    private func validateHeartRateThresholds() {
+        // Steppers inherently prevent values outside ranges, but ensure logical consistency
+        // Make sure low threshold is always lower than high threshold
+        if lowHeartRateAlert >= highHeartRateAlert {
+            // Adjust the high threshold to maintain separation
+            highHeartRateAlert = lowHeartRateAlert + 10
+            // Ensure high threshold doesn't exceed maximum
+            if highHeartRateAlert > 250 {
+                highHeartRateAlert = 250
+                lowHeartRateAlert = 240
+            }
+        }
+
+        print("📱 [Settings] Heart rate thresholds: Low: \(lowHeartRateAlert), High: \(highHeartRateAlert)")
     }
 }
 
