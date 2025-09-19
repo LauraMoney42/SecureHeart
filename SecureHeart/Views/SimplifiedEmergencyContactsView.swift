@@ -86,7 +86,6 @@ struct SimplifiedEmergencyContactsView: View {
                 }
                 .padding()
             }
-            .navigationBarHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
