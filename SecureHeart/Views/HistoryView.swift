@@ -190,6 +190,8 @@ struct WeeklyTrendGraphView: View {
                 print("📊 [WEEKLY] Day \(i): NO ENTRIES FOUND - this will make entryCount=0")
             }
 
+            // COMMENTED OUT FOR PHYSICAL TESTING - No fake data generation
+            /*
             // TESTING: Force entryCount and avgHR to ensure data points are drawn
             let testEntryCount = dayEntries.count > 0 ? dayEntries.count : 10 // Force non-zero
             let testAvgHR = avgHR > 0 ? avgHR : (70 + i * 5) // Force non-zero heart rate
@@ -202,6 +204,16 @@ struct WeeklyTrendGraphView: View {
                 maxHR: maxHR > 0 ? maxHR : testAvgHR + 10,
                 minHR: minHR > 0 ? minHR : testAvgHR - 10,
                 entryCount: testEntryCount
+            ))
+            */
+
+            // PHYSICAL TESTING - Use real data only (no fake data)
+            data.append(DayTrendData(
+                date: date,
+                averageHR: avgHR,
+                maxHR: maxHR,
+                minHR: minHR,
+                entryCount: dayEntries.count
             ))
         }
 
@@ -263,6 +275,8 @@ struct MonthlyTrendGraphView: View {
             let maxHR = weekEntries.map { $0.heartRate }.max() ?? 0
             let minHR = weekEntries.map { $0.heartRate }.min() ?? 0
 
+            // COMMENTED OUT FOR PHYSICAL TESTING - No fake data generation
+            /*
             // TESTING: Force entryCount and avgHR to ensure data points are drawn
             let testEntryCount = weekEntries.count > 0 ? weekEntries.count : 25 // Force non-zero
             let testAvgHR = avgHR > 0 ? avgHR : (75 + i * 3) // Force non-zero heart rate
@@ -275,6 +289,16 @@ struct MonthlyTrendGraphView: View {
                 maxHR: maxHR > 0 ? maxHR : testAvgHR + 15,
                 minHR: minHR > 0 ? minHR : testAvgHR - 15,
                 entryCount: testEntryCount
+            ))
+            */
+
+            // PHYSICAL TESTING - Use real data only (no fake data)
+            data.append(WeekTrendData(
+                weekStart: startOfWeek,
+                averageHR: avgHR,
+                maxHR: maxHR,
+                minHR: minHR,
+                entryCount: weekEntries.count
             ))
         }
 

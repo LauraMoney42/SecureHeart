@@ -1,82 +1,140 @@
-# 🎉 OUTSTANDING WORK! NEW EXPORT & SPIKE DETECTION TASKS
+# 🎯 UPDATED DEVELOPER TASKS
 
-**Date**: September 17, 2025, 2:35 AM
+**Date**: September 18, 2025, 6:05 PM
 **From**: PM (Claude)
-**Status**: All Emergency Alert tasks completed! Major new features assigned.
+**Status**: New Emergency Contacts Issue Found
 
-## ✅ **EXCELLENT PROGRESS!**
-Fantastic work completing ALL previous tasks:
-- ✅ Emergency Contact screen layout fixes
-- ✅ Weekly/Monthly graph features
-- ✅ Slider-to-text conversion with validation
-- ✅ Enable/disable toggles for emergency alerts
-
-## 🚀 **NEW MAJOR FEATURES: Export & Intelligent Spike Detection**
-
-### **🎯 PRIORITY FEATURES:**
-Based on research of Apple Health app and industry standards, implementing advanced export and anomaly detection features.
-
-## 📊 **CURRENT NEW FEATURES NEEDED:**
-- CSV/PDF export functionality for medical record sharing
-- Intelligent heart rate spike/anomaly detection
-- Professional report generation capabilities
-
-## 🛠️ **YOUR NEW TASKS:**
-
-### **TASK 1: CSV Export for Weekly/Monthly Trends** (HIGH PRIORITY)
-**Export functionality:**
-- ✅ **Add**: Export buttons to weekly/monthly views
-- ✅ **Generate**: CSV files with Date, Time, Heart Rate, Zone, Anomaly_Type, Anomaly_Severity columns
-- ✅ **Add**: Separate "Export Anomalies Only" option for medical analysis
-- ✅ **Integrate**: iOS share sheet (email, save to files)
-- ✅ **Format**: Professional CSV with proper headers
-- ✅ **Name**: SecureHeart_Weekly_YYYY-MM-DD.csv, SecureHeart_Anomalies_YYYY-MM-DD.csv
-
-### **TASK 2: PDF Export for Weekly/Monthly Trends** (HIGH PRIORITY)
-**Professional reports:**
-- ✅ **Generate**: PDF reports with trend graphs and anomalies highlighted
-- ✅ **Include**: Summary stats (avg, min, max, spikes detected)
-- ✅ **Add**: Dedicated "Anomalies Detected" section with medical details
-- ✅ **Add**: Separate "Anomaly Report" PDF for doctor consultations
-- ✅ **Add**: Professional report header with branding
-- ✅ **Optimize**: For medical record sharing and printing
-- ✅ **Name**: SecureHeart_Report_Weekly_YYYY-MM-DD.pdf, SecureHeart_AnomalyReport_YYYY-MM-DD.pdf
-
-### **TASK 3: Heart Rate Spike Detection & Analysis** (HIGH PRIORITY)
-**Intelligent anomaly detection (following Apple Health approach):**
-- ✅ **Detect**: Significant spikes (>30 BPM increase in <5 min)
-- ✅ **Detect**: Significant drops (>25 BPM decrease in <5 min)
-- ✅ **Detect**: Sustained highs (>90% max HR for >10 min)
-- ✅ **Detect**: Unusual lows (<40 BPM when not sleeping)
-- ✅ **Add**: "Show Anomalies Only" filter toggle to graphs
-- ✅ **Highlight**: Red markers for detected anomalies
-- ✅ **Badge**: Anomaly count indicator on Data tab
-
-## 📐 **DESIGN REQUIREMENTS:**
-- **Professional medical-grade exports** suitable for doctor visits
-- **Apple Health app-style spike detection** with intelligent filtering
-- **Clean integration** with existing Data tab interface
-- **Configurable detection parameters** in Settings
-
-## 💡 **INDUSTRY RESEARCH FINDINGS:**
-- Apple Health 2025: Uses 30-day periods for hypertension detection
-- Medical apps: 92% accuracy in anomaly detection with ML algorithms
-- Best practice: Red markers for anomalies, yellow/red alert system
-- Export standard: CSV for data analysis, PDF for medical reports
-
-## 📁 **DETAILED REQUIREMENTS:**
-See `PM_TASKS.json` for complete technical specifications
-
-## ⏰ **CHECK-IN SCHEDULE:**
-- **READ THIS FILE**: Every 15 minutes
-- **UPDATE PROGRESS**: In `DEVELOPER_STATUS.json`
-- **PM MONITORING**: Every 5 minutes
-
-## 📸 **VERIFICATION:**
-PM will take screenshots to verify export functionality and spike detection features
+## 🚨 **NEW URGENT TASK - EMERGENCY CONTACTS**
 
 ---
 
-**🚀 START WITH CSV EXPORT FUNCTIONALITY - TASK 1**
+## 🚨 **CRITICAL EMERGENCY TASK**
 
-**📝 UPDATE `DEVELOPER_STATUS.json` WHEN YOU BEGIN!**
+### **TASK_EMERGENCY: RESOLVE BUILD FAILURES** (IMMEDIATE - BLOCKING ALL WORK)
+**Issue**: App won't build after Emergency Contacts changes - "tons of errors"
+**Priority**: CRITICAL - Nothing else can proceed until build is fixed
+**Requirements:**
+- Immediately fix all build errors
+- Restore app to buildable state
+- Identify what broke during Emergency Contacts + button fix
+- Get clean build with no errors
+- Preserve working functionality
+
+**Debugging Steps:**
+1. Run build and capture exact error messages
+2. Check if packages/dependencies were accidentally removed
+3. Verify SimplifiedEmergencyContactsView.swift syntax
+4. Fix import statements if broken
+5. Resolve compilation errors systematically
+6. Ensure clean build before proceeding
+
+**Success Criteria:**
+- App builds successfully with no errors
+- All existing functionality preserved
+- Ready for Emergency Contacts + button fix (if that caused the issue)
+
+---
+
+## 🔧 **PRIORITY TASKS** (AFTER BUILD IS FIXED)
+
+### **TASK_NEW: Improve Heart Rate Validation for Emergency Alert Thresholds** (HIGH PRIORITY)
+**Issue**: Need to restrict medically impossible heart rate values in emergency alert settings
+**Requirements:**
+- Add medical validation to emergency alert threshold inputs
+- Prevent users from entering dangerous or impossible heart rate values
+- Provide clear error messages with medical context
+- Implement scientifically-based heart rate limits
+
+**Medical Research Findings:**
+- **Normal Range**: 60-100 BPM (adults at rest)
+- **Bradycardia**: < 50 BPM (updated medical consensus from < 60 BPM)
+- **Severe Bradycardia**: < 40 BPM (medical emergency threshold)
+- **Tachycardia**: > 100 BPM (traditional) or > 90 BPM (updated consensus)
+- **Dangerous Tachycardia**: > 120 BPM sustained (medical attention required)
+- **Life-threatening**: > 200 BPM sustained (cardiac arrest risk)
+- **Physiological Limit**: ~300 BPM (theoretical maximum due to cardiac refractory period)
+
+**Implementation:**
+- **Low Threshold Range**: 25-90 BPM (allow for severe bradycardia to normal high)
+- **High Threshold Range**: 90-250 BPM (allow for tachycardia to emergency levels)
+- Add real-time validation with medical explanations
+- Show warning messages for extreme values
+- Prevent submission of impossible values (< 25 or > 250 BPM)
+
+### **TASK_URGENT_1: Fix Missing Emergency Contacts + Button** (CRITICAL)
+**Issue**: User reports + button to add Emergency Contacts is still not visible
+**Status**: Code exists but + button not showing - MUST FIX IMMEDIATELY
+**Requirements:**
+- Debug why + button is not visible in Emergency Contacts section
+- Fix navigation to ensure + button appears in Settings → Emergency Contacts
+- Verify the button is actually clickable and functional
+- Take screenshot before and after fix
+- Test the complete add contact flow
+
+### **TASK_URGENT_2: Fix Heart Rate Export Data Frequency** (CRITICAL)
+**Issue**: Exported heart rate data shows excessive readings (646 in ~1 hour vs expected ~60)
+**Problem**: Export is including too many readings - should be 1 reading per minute, not 11+ per minute
+**Requirements:**
+- Fix export logic to sample heart rate data appropriately
+- Implement 1-minute intervals for exported data
+- Reduce data density from ~11 readings/minute to 1 reading/minute
+- Ensure exported CSV shows accurate, usable data
+- Verify export file size and reading count are reasonable
+
+**Expected Behavior:**
+- 1 hour = ~60 readings (1 per minute)
+- 1 day = ~1440 readings (1 per minute)
+- Export should filter/sample data appropriately
+- Maintain data accuracy while reducing frequency
+
+---
+
+## ✅ **PREVIOUSLY COMPLETED TASKS**
+
+### **TASK_001: Fix Apple Watch Connection Status Display** (HIGH PRIORITY)
+**Issue**: Settings shows "Not Connected" despite watch actively sharing BPM data
+**Requirements:**
+- Fix the connection status display in Settings → Apple Watch Device
+- Should show "Connected" when watch is actively sending data
+- Verify the status updates correctly when watch connects/disconnects
+- Test with actual Apple Watch device
+
+### **TASK_002: Comment Out All Test Data** (HIGH PRIORITY)
+**Purpose**: Enable physical testing with real devices
+**Requirements:**
+- Comment out or remove all mock/test heart rate data
+- Comment out any simulated data generators
+- Ensure app only displays actual data from Apple Watch
+- Clean up any hardcoded test values
+- Verify app works with real device data only
+
+### **TASK_003: Verify Weekly/Monthly Graphs** (MEDIUM PRIORITY)
+**Previously identified as missing - needs verification:**
+- Check if Weekly trend graph is implemented
+- Check if Monthly trend graph is implemented
+- Verify time period selectors (Day/Week/Month toggle)
+- Test data aggregation for longer periods
+
+## 🔧 **IMPLEMENTATION NOTES:**
+
+### For Apple Watch Connection:
+- Check HealthKitManager or similar for connection status logic
+- Ensure status reflects actual HealthKit/Watch connectivity
+- May need to update status polling or observation
+
+### For Test Data Removal:
+- Search for any mock data generators
+- Look for hardcoded BPM values (like 57, 72, etc.)
+- Check for test data in heart rate history
+- Ensure clean slate for real testing
+
+## 📸 **VERIFICATION REQUIRED:**
+For each task, provide:
+1. Screenshots before changes
+2. Code changes made
+3. Screenshots after changes
+4. Confirmation of functionality with real devices (where applicable)
+
+---
+
+**📝 UPDATE `DEVELOPER_STATUS.json` AS YOU COMPLETE TASKS!**

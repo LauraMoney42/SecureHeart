@@ -1,90 +1,126 @@
 {
   "project": "SecureHeart MVP1",
-  "timestamp": "2025-09-16T23:40:00Z",
+  "timestamp": "2025-09-18T18:02:00Z",
   "pm_status": "monitoring",
-  "developer_status": "completed_graph_tasks",
-  "current_priority": "add_export_and_spike_detection_features",
+  "developer_status": "all_urgent_tasks_completed",
+  "current_priority": "physical_testing_ready",
 
   "tasks": [
     {
+      "id": "TASK_URGENT",
+      "title": "URGENT: Restore Missing Dashboard Tab and Functionality",
+      "status": "completed",
+      "priority": "CRITICAL",
+      "assignee": "developer",
+      "description": "Dashboard with main heart rate display has disappeared - restore immediately",
+      "location": "iPhone App - Main Dashboard/Home tab (missing)",
+      "requirements": [
+        "Restore main Dashboard tab with heart rate display",
+        "Ensure live heart rate monitoring (large BPM display) is visible",
+        "Restore Recent History section with heart rate readings",
+        "Restore current heart rate color coding (blue/green/yellow/red zones)",
+        "Restore LIVE indicator for real-time data connection",
+        "Restore all original Dashboard functionality exactly as it was",
+        "Ensure Dashboard is the default/first tab when app opens"
+      ],
+      "acceptance_criteria": [
+        "Dashboard tab visible and accessible",
+        "Main heart rate display showing current BPM prominently",
+        "Recent History section visible with heart rate readings and timestamps",
+        "Color zones working correctly for heart rate display",
+        "LIVE indicator showing real-time connection status",
+        "Dashboard loads as primary/home screen",
+        "All original Dashboard features restored to previous working state"
+      ],
+      "completion_notes": "Dashboard fully restored and confirmed visible by user at 5:38 PM on Sept 18, 2025"
+    },
+    {
       "id": "TASK_001",
-      "title": "Add CSV Export for Weekly/Monthly Trends",
+      "title": "Update Export UI Flow for Weekly/Monthly Trends",
       "status": "pending",
       "priority": "high",
       "assignee": "developer",
-      "description": "Implement CSV export functionality for weekly and monthly heart rate data",
+      "description": "Implement improved export UI with format selection for weekly and monthly heart rate data",
       "location": "iPhone App - Data Tab (Weekly/Monthly views)",
       "requirements": [
-        "Add export button to weekly trend view",
-        "Add export button to monthly trend view",
+        "Add 'Export Weekly Trend' button (remove CSV wording)",
+        "Add 'Export Monthly Trend' button (remove CSV wording)",
+        "Add 'Export Anomalies' button for both weekly/monthly views",
+        "Create format selection dialog with CSV and PDF options",
         "Generate CSV with columns: Date, Time, Heart Rate (BPM), Zone, Anomaly_Type, Anomaly_Severity",
-        "Include proper CSV headers and formatting",
-        "Add separate 'Export Anomalies Only' option for medical analysis",
+        "Generate PDF reports with trend graphs and anomaly highlights",
         "Use iOS share sheet for export (email, save to files, etc.)",
         "Show export progress indicator for large datasets"
       ],
       "acceptance_criteria": [
-        "Export buttons visible and functional on weekly/monthly views",
-        "CSV files properly formatted with correct data including anomaly data",
-        "Separate anomaly-only export generates focused medical reports",
-        "iOS share sheet integration working",
-        "Export includes all data points for selected time period",
-        "File naming: SecureHeart_Weekly_YYYY-MM-DD.csv, SecureHeart_Anomalies_YYYY-MM-DD.csv"
+        "Clean export buttons without format-specific wording",
+        "Format selection dialog appears after clicking export buttons",
+        "Both CSV and PDF options generate correctly formatted files",
+        "Separate anomaly export works for both weekly/monthly periods",
+        "iOS share sheet integration working for both formats",
+        "File naming: SecureHeart_Weekly_YYYY-MM-DD.[csv/pdf], SecureHeart_Anomalies_YYYY-MM-DD.[csv/pdf]"
       ]
     },
     {
       "id": "TASK_002",
-      "title": "Add PDF Export for Weekly/Monthly Trends",
+      "title": "Add Anomaly Filter to Recent History Data",
       "status": "pending",
       "priority": "high",
       "assignee": "developer",
-      "description": "Implement PDF export functionality for weekly and monthly heart rate trend reports",
-      "location": "iPhone App - Data Tab (Weekly/Monthly views)",
+      "description": "Add anomaly filtering capability to Recent History section for focused analysis",
+      "location": "iPhone App - Main Dashboard Recent History section",
       "requirements": [
-        "Generate PDF reports with trend graphs",
-        "Include summary statistics (avg, min, max, spikes detected)",
-        "Add professional report header with date range",
-        "Include heart rate zones analysis",
-        "Add dedicated 'Anomalies Detected' section with details",
-        "Include anomaly timeline and severity breakdown",
-        "Add separate 'Anomaly Report' PDF option for medical consultations",
-        "Use iOS share sheet for PDF export",
-        "Optimize PDF for both viewing and printing"
+        "Add 'Filter Anomalies' toggle button to Recent History section",
+        "When enabled, show only anomalous heart rate readings",
+        "Highlight anomalies with visual indicators (red markers/borders)",
+        "Maintain existing Recent History UI layout and design",
+        "Add anomaly count indicator when filter is active",
+        "Filter should work with existing heart rate data display",
+        "Include anomaly type labels (spike, drop, sustained high, unusual low)"
       ],
       "acceptance_criteria": [
-        "PDF exports contain clear, readable trend graphs with anomalies highlighted",
-        "Summary statistics include anomaly counts and patterns",
-        "Dedicated anomaly section with medical-grade detail",
-        "Separate anomaly-focused PDF for doctor visits",
-        "Professional report layout with SecureHeart branding",
-        "PDF optimized for medical record sharing",
-        "File naming: SecureHeart_Report_Weekly_YYYY-MM-DD.pdf, SecureHeart_AnomalyReport_YYYY-MM-DD.pdf"
+        "Filter toggle clearly visible in Recent History section",
+        "Toggle successfully filters to show anomalies only",
+        "Anomalies visually distinguished with red indicators",
+        "Anomaly count displayed when filter active",
+        "Filter integrates seamlessly with existing UI",
+        "All anomaly types properly detected and labeled"
       ]
     },
     {
       "id": "TASK_003",
-      "title": "Implement Heart Rate Spike Detection and Analysis",
+      "title": "Troubleshoot and Verify Anomaly Display on Weekly/Monthly Trends",
       "status": "pending",
       "priority": "high",
       "assignee": "developer",
-      "description": "Add intelligent spike detection with filter options based on Apple Health app approach",
-      "location": "iPhone App - Data Tab, add new 'Anomalies' filter section",
+      "description": "Debug and fix anomaly filtering/visualization on Weekly and Monthly trend graphs",
+      "location": "iPhone App - Data Tab (Weekly/Monthly trend graphs)",
       "requirements": [
-        "Detect significant spikes: >30 BPM increase in <5 minutes",
-        "Detect significant drops: >25 BPM decrease in <5 minutes",
-        "Detect sustained highs: >90% max HR for >10 minutes",
-        "Detect unusual lows: <40 BPM when not sleeping",
-        "Add 'Show Anomalies Only' filter toggle to existing graphs",
-        "Highlight detected spikes/anomalies with red markers on graphs",
-        "Add anomaly count badge to Data tab when anomalies detected"
+        "Investigate why anomaly filter buttons don't visually affect graphs",
+        "Debug anomaly detection algorithm - verify it finds anomalies in current data",
+        "Add debug logging to show detected anomalies in console",
+        "Ensure anomalies are properly highlighted with red markers when filter active",
+        "Verify 'Show Anomalies Only' filter actually filters graph data",
+        "Test with synthetic anomaly data if current dataset has no anomalies",
+        "Add visual feedback when no anomalies found (e.g., 'No anomalies detected' message)"
       ],
       "acceptance_criteria": [
-        "Spike detection algorithm accurately identifies anomalies",
-        "Filter toggle shows/hides normal readings vs anomalies only",
-        "Anomalies clearly marked with visual indicators",
-        "Detection parameters configurable in Settings",
-        "Anomaly detection works on daily, weekly, and monthly views"
+        "Anomaly filter buttons show visible effect on graphs when clicked",
+        "Console logs show detected anomalies (count and timestamps)",
+        "Red markers/indicators visible on graphs when anomalies present",
+        "Filter toggle successfully shows/hides normal vs anomalous readings",
+        "Clear user feedback when no anomalies detected in data range",
+        "Screenshots prove anomaly visualization is working correctly"
       ]
+    },
+    {
+      "id": "TASK_004",
+      "title": "Implement Heart Rate Spike Detection and Analysis",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Add intelligent spike detection with filter options based on Apple Health app approach",
+      "completion_notes": "Code implemented but requires verification of visual functionality"
     },
     {
       "id": "TASK_004",
@@ -123,6 +159,26 @@
       "description": "Weekly and Monthly trend graphs implementation completed",
       "location": "iPhone App - Data Tab",
       "completion_notes": "Developer reported completion of weekly/monthly graph features"
+    },
+    {
+      "id": "TASK_WATCH_001",
+      "title": "Fix Apple Watch Connection Status Display",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Settings showed 'Not Connected' despite watch actively sharing BPM data",
+      "location": "iPhone App - Settings Tab",
+      "completion_notes": "Fixed on Sept 18, 2025 - Now dynamically shows Connected & Active (green), Connected (yellow), or Not Connected (red) based on actual watch status"
+    },
+    {
+      "id": "TASK_TEST_001",
+      "title": "Remove All Test Data for Physical Testing",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "developer",
+      "description": "Comment out all mock data generators to enable real device testing",
+      "location": "Multiple app files",
+      "completion_notes": "Completed Sept 18, 2025 - All test data removed, app now only shows actual Apple Watch data"
     }
   ],
 

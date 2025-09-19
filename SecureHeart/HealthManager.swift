@@ -130,6 +130,8 @@ class HealthManager: ObservableObject {
     init() {
         print("🔧 [INIT] HealthManager initializing...")
 
+        // COMMENTED OUT FOR PHYSICAL TESTING - NO TEST DATA GENERATION
+        /*
         #if targetEnvironment(simulator)
         print("🔧 [INIT] Running in simulator - generating test data")
         // Generate comprehensive medical test data for simulator
@@ -151,6 +153,12 @@ class HealthManager: ObservableObject {
                 print("🔧 [FALLBACK] Only \(self.heartRateHistory.count) entries found, but not regenerating to preserve data")
             }
         }
+        */
+
+        // PHYSICAL TESTING MODE - Wait for real Apple Watch data only
+        print("🔧 [INIT] Physical testing mode - waiting for real Apple Watch data")
+        currentHeartRate = 0  // Will be populated by real heart rate data
+        lastUpdated = "Waiting for Apple Watch data..."
         
         // Listen for heart rate updates from Apple Watch
         setupWatchConnectivityListeners()
@@ -778,9 +786,17 @@ class HealthManager: ObservableObject {
             print("🔧 [TEST DATA] Last entry: \(heartRateHistory.last?.date ?? Date()) - \(heartRateHistory.last?.heartRate ?? 0) BPM")
         }
 
+        // COMMENTED OUT FOR PHYSICAL TESTING - Don't use test data
+        /*
         // Set current heart rate to the most recent entry
         currentHeartRate = heartRateHistory.first?.heartRate ?? 72
+        */
 
+        // PHYSICAL TESTING - Start with 0, wait for real Apple Watch data
+        currentHeartRate = 0
+
+        // COMMENTED OUT FOR PHYSICAL TESTING - No simulator fake connection
+        /*
         // Also set live heart rate for simulator so UI shows data
         #if targetEnvironment(simulator)
         DispatchQueue.main.async {
@@ -789,6 +805,7 @@ class HealthManager: ObservableObject {
             print("🔧 [SIMULATOR] Setting liveHeartRate to \(self.currentHeartRate), isWatchConnected: \(self.isWatchConnected)")
         }
         #endif
+        */
 
         // Calculate stats from today's data
         let calendar = Calendar.current
