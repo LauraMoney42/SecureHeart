@@ -156,7 +156,7 @@ struct SettingsView: View {
                 }
                 
                 Section("Data") {
-                    NavigationLink(destination: HistoryView(heartRateManager: heartRateManager)) {
+                    NavigationLink(destination: HeartRateView()) {
                         HStack {
                             Image(systemName: "clock")
                                 .foregroundColor(.green)

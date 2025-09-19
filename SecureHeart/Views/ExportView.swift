@@ -20,8 +20,8 @@ struct ExportOptionsSheet: View {
     private var sortedHistory: [HeartRateEntry] {
         let fullHistory = healthManager.getFullHeartRateHistory()
 
-        // If no real data is available (simulator/testing), generate sample data for export demo
-        if fullHistory.isEmpty {
+        // If no real data is available and test data is enabled, generate sample data
+        if fullHistory.isEmpty && TestDataManager.shared.shouldGenerateTestData(for: .exportSamples) {
             if cachedSampleData == nil {
                 print("⚠️ [EXPORT] No heart rate data available, generating sample data for export demo")
                 cachedSampleData = generateSampleExportData()

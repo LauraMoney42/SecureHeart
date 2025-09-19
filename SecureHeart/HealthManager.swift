@@ -133,30 +133,38 @@ class HealthManager: ObservableObject {
         // Clean up any duplicate data on startup
         cleanupDuplicatesInStoredData()
 
-        // COMMENTED OUT FOR PHYSICAL TESTING - NO TEST DATA GENERATION
-        /*
-        #if targetEnvironment(simulator)
-        print("🔧 [INIT] Running in simulator - generating test data")
-        // Generate comprehensive medical test data for simulator
-        generateRealisticMedicalTestData()
-        #else
-        print("🔧 [INIT] Running on device - waiting for real data")
-        // Update current stats - start with 0 for real data
-        currentHeartRate = 0  // Will be populated by real heart rate data
-        lastUpdated = "Waiting for data..."
-        #endif
+        // Check test data configuration
+        let testDataManager = TestDataManager.shared
+        testDataManager.logConfiguration()
 
-        // DEBUG: Force test data generation if we have no data (fallback for any issues)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            print("🔧 [FALLBACK] Checking data: \(self.heartRateHistory.count) entries")
-            if self.heartRateHistory.isEmpty {
-                print("🔧 [FALLBACK] No data found, forcing test data generation")
-                self.generateRealisticMedicalTestData()
-            } else if self.heartRateHistory.count < 500 {
-                print("🔧 [FALLBACK] Only \(self.heartRateHistory.count) entries found, but not regenerating to preserve data")
+        // Clear data based on test data settings
+        if !testDataManager.isTestDataEnabled {
+            // For real device testing - clear all test data
+            clearStoredHeartRateHistory()
+            orthostaticEvents.removeAll()
+            print("🧹 [iPhone] Cleared test data for real device testing")
+        }
+
+        // Generate test data if enabled
+        if testDataManager.shouldGenerateTestData(for: .heartRateHistory) {
+            print("🔧 [INIT] Test data enabled - generating medical test data")
+            generateRealisticMedicalTestData()
+        } else {
+            print("🔧 [INIT] Test data disabled - waiting for real data")
+            currentHeartRate = 0
+            lastUpdated = "Waiting for data..."
+        }
+
+        // Fallback data generation if enabled
+        if testDataManager.shouldGenerateTestData(for: .dailyPatterns) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                print("🔧 [FALLBACK] Checking data: \(self.heartRateHistory.count) entries")
+                if self.heartRateHistory.isEmpty {
+                    print("🔧 [FALLBACK] No data found, generating fallback data")
+                    self.generateRealisticMedicalTestData()
+                }
             }
         }
-        */
 
         // PHYSICAL TESTING MODE - Wait for real Apple Watch data only
         print("🔧 [INIT] Physical testing mode - waiting for real Apple Watch data")
@@ -292,22 +300,40 @@ class HealthManager: ObservableObject {
         // Check for emergency conditions first
         checkEmergencyThresholds(heartRate)
 
-        // Update current heart rate
+        // Always update current heart rate for live display
         currentHeartRate = heartRate
         liveHeartRate = heartRate
         lastUpdated = "Just now"
 
-        // Add to history
-        let entry = HeartRateEntry(
-            heartRate: heartRate,
-            date: Date(),
-            delta: deltaFromAverage,
-            context: "From Apple Watch"
-        )
-        heartRateHistory.append(entry)
+        // Only add to history based on interval or significant change
+        let shouldAddToHistory: Bool
+        let now = Date()
 
-        // Save to persistent storage (privacy-first local storage)
-        saveHeartRateEntryToPersistentStorage(entry)
+        if let lastEntry = heartRateHistory.first {
+            let timeSinceLastEntry = now.timeIntervalSince(lastEntry.date)
+            let significantChange = abs(heartRate - lastEntry.heartRate) >= 30
+            shouldAddToHistory = timeSinceLastEntry >= 60.0 || significantChange
+        } else {
+            // First entry, always add
+            shouldAddToHistory = true
+        }
+
+        if shouldAddToHistory {
+            let entry = HeartRateEntry(
+                heartRate: heartRate,
+                date: Date(),
+                delta: deltaFromAverage,
+                context: "From Apple Watch"
+            )
+            heartRateHistory.append(entry)
+
+            // Save to persistent storage (privacy-first local storage)
+            saveHeartRateEntryToPersistentStorage(entry)
+
+            print("📱 [iPhone] Added heart rate \(heartRate) to history (interval met or significant change)")
+        } else {
+            print("📱 [iPhone] Skipped adding \(heartRate) to history (too frequent)")
+        }
 
         // Limit in-memory history size (keep last 1000 for trend analysis)
         // Note: Increased from 100 to support weekly/monthly trends

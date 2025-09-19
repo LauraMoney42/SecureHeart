@@ -181,81 +181,12 @@ extension WatchConnectivityManager: WCSessionDelegate {
     // Handle messages with reply handlers
     func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
         print("📱 [iPhone] Received message with reply handler: \(message)")
-        
-        // Process the message (same logic as didReceiveMessage)
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            
-            // Handle heart rate updates
-            if let heartRate = message["heartRate"] as? Int {
-                self.latestHeartRate = heartRate
-                self.lastMessageReceived = Date()
-                
-                // Get posture data if available
-                let posture = message["posture"] as? String
-                let isStanding = message["isStanding"] as? Bool
-                
-                // Add to history (using tuple format for iPhone)
-                let historyEntry = (heartRate: heartRate, timestamp: Date())
-                self.heartRateHistory.append(historyEntry)
-                
-                // Limit history size
-                if self.heartRateHistory.count > self.maxHistoryCount {
-                    self.heartRateHistory.removeFirst()
-                }
-                
-                // Post notification for other parts of the app with posture data
-                var userInfo: [String: Any] = ["heartRate": heartRate]
-                if let posture = posture {
-                    userInfo["posture"] = posture
-                }
-                if let isStanding = isStanding {
-                    userInfo["isStanding"] = isStanding
-                }
-                
-                NotificationCenter.default.post(
-                    name: Notification.Name("HeartRateUpdated"),
-                    object: nil,
-                    userInfo: userInfo
-                )
-                
-                if let posture = posture {
-                    print("✅ [iPhone] Updated UI with heart rate: \(heartRate) (\(posture)) via reply handler")
-                } else {
-                    print("✅ [iPhone] Updated UI with heart rate: \(heartRate) via reply handler")
-                }
-            }
-            
-            // Handle heart rate delta
-            if let delta = message["heartRateDelta"] as? Int {
-                NotificationCenter.default.post(
-                    name: Notification.Name("HeartRateDeltaUpdated"),
-                    object: nil,
-                    userInfo: ["delta": delta]
-                )
-            }
-            
-            // Handle significant changes
-            if let changeType = message["significantChange"] as? String {
-                NotificationCenter.default.post(
-                    name: Notification.Name("SignificantHeartRateChange"),
-                    object: nil,
-                    userInfo: ["changeType": changeType, "message": message]
-                )
-            }
-            
-            // Handle orthostatic events
-            if let eventData = message["orthostaticEvent"] as? [String: Any] {
-                NotificationCenter.default.post(
-                    name: Notification.Name("OrthostaticEventReceived"),
-                    object: nil,
-                    userInfo: eventData
-                )
-            }
-        }
-        
-        // Send reply to acknowledge receipt
-        replyHandler(["status": "received", "timestamp": Date().timeIntervalSince1970])
+
+        // Just delegate to the main message handler to avoid duplicate processing
+        self.session(session, didReceiveMessage: message)
+
+        // Send acknowledgment reply
+        replyHandler(["status": "received"])
     }
     
     // Receive application context

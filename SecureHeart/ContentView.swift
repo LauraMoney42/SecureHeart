@@ -436,45 +436,59 @@ struct OrthosticChartContent: View {
     @ObservedObject var healthManager: HealthManager
     @State private var selectedEventIndex = 0
     
-    // Simulate multiple orthostatic events throughout the day
+    // Use real orthostatic events from HealthManager
     var orthostaticEvents: [(startTime: String, endTime: String, data: [(time: String, supineHR: Int, standingHR: Int, delta: Int)])] {
-        return [
-            (startTime: "8:15 AM", endTime: "8:25 AM", data: [
-                (time: "Baseline", supineHR: 70, standingHR: 70, delta: 0),
-                (time: "1 min", supineHR: 70, standingHR: 95, delta: 25),
-                (time: "3 min", supineHR: 70, standingHR: 105, delta: 35),
-                (time: "5 min", supineHR: 70, standingHR: 108, delta: 38),
-                (time: "10 min", supineHR: 70, standingHR: 110, delta: 40)
-            ]),
-            (startTime: "2:30 PM", endTime: "2:40 PM", data: [
-                (time: "Baseline", supineHR: 75, standingHR: 75, delta: 0),
-                (time: "1 min", supineHR: 75, standingHR: 98, delta: 23),
-                (time: "3 min", supineHR: 75, standingHR: 102, delta: 27),
-                (time: "5 min", supineHR: 75, standingHR: 105, delta: 30),
-                (time: "10 min", supineHR: 75, standingHR: 107, delta: 32)
-            ]),
-            (startTime: "6:45 PM", endTime: "6:55 PM", data: [
-                (time: "Baseline", supineHR: 68, standingHR: 68, delta: 0),
-                (time: "1 min", supineHR: 68, standingHR: 85, delta: 17),
-                (time: "3 min", supineHR: 68, standingHR: 88, delta: 20),
-                (time: "5 min", supineHR: 68, standingHR: 90, delta: 22),
-                (time: "10 min", supineHR: 68, standingHR: 92, delta: 24)
-            ])
-        ]
+        // Convert real orthostatic events to chart format
+        return healthManager.orthostaticEvents.map { event in
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            let startTime = formatter.string(from: event.timestamp)
+            let endTime = formatter.string(from: event.timestamp.addingTimeInterval(600)) // +10 minutes
+
+            return (
+                startTime: startTime,
+                endTime: endTime,
+                data: [
+                    (time: "Baseline", supineHR: event.baselineHeartRate, standingHR: event.baselineHeartRate, delta: 0),
+                    (time: "Peak", supineHR: event.baselineHeartRate, standingHR: event.peakHeartRate, delta: event.peakHeartRate - event.baselineHeartRate)
+                ]
+            )
+        }
     }
     
-    var currentEvent: (startTime: String, endTime: String, data: [(time: String, supineHR: Int, standingHR: Int, delta: Int)]) {
-        orthostaticEvents[selectedEventIndex]
+    var currentEvent: (startTime: String, endTime: String, data: [(time: String, supineHR: Int, standingHR: Int, delta: Int)])? {
+        guard !orthostaticEvents.isEmpty && selectedEventIndex < orthostaticEvents.count else { return nil }
+        return orthostaticEvents[selectedEventIndex]
     }
-    
+
     var orthostaticTestData: [(time: String, supineHR: Int, standingHR: Int, delta: Int)] {
-        currentEvent.data
+        currentEvent?.data ?? []
     }
     
     var body: some View {
         VStack(spacing: 8) {
-            // Event selector if multiple events exist
-            if orthostaticEvents.count > 1 {
+            // Show empty state if no orthostatic events
+            if orthostaticEvents.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "heart.text.square")
+                        .font(.system(size: 32))
+                        .foregroundColor(.secondary)
+
+                    VStack(spacing: 4) {
+                        Text("No Orthostatic Events")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Text("Orthostatic responses will appear here when detected")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(height: 150)
+                .frame(maxWidth: .infinity)
+            } else {
+                // Event selector if multiple events exist
+                if orthostaticEvents.count > 1 {
                 HStack {
                     Text("Event:")
                         .font(.system(size: 11, weight: .medium))
@@ -627,7 +641,7 @@ struct OrthosticChartContent: View {
                     Text("Started:")
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
-                    Text(currentEvent.startTime)
+                    Text(currentEvent?.startTime ?? "No data")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.primary)
                 }
@@ -649,7 +663,7 @@ struct OrthosticChartContent: View {
                     Text("Ended:")
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
-                    Text(currentEvent.endTime)
+                    Text(currentEvent?.endTime ?? "No data")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.primary)
                 }
@@ -709,6 +723,7 @@ struct OrthosticChartContent: View {
                 Spacer()
             }
             .padding(.top, 4)
+            } // Close else block for orthostatic events
         }
     }
     
@@ -1932,8 +1947,13 @@ struct GraphExportSheet: View {
 
         // If no real data, generate sample data for demo
         if realData.isEmpty {
-            print("⚠️ [GRAPH] No real data for today, generating sample data")
-            return generateSampleTodaysData()
+            if TestDataManager.shared.shouldGenerateTestData(for: .dailyPatterns) {
+                print("⚠️ [GRAPH] No real data for today, generating sample data")
+                return generateSampleTodaysData()
+            } else {
+                print("📊 [GRAPH] No data available and test data is disabled")
+                return []
+            }
         }
 
         // Apply PDF-optimized sampling for export (much more aggressive)

@@ -8,6 +8,63 @@
 
 # SecureHeart Multi-Agent Communication System
 
+## 🧪 TEST DATA MANAGEMENT SYSTEM
+
+### ✅ **NEW: Centralized Test Data Control**
+A comprehensive test data management system has been implemented for easy toggling between development and production modes.
+
+### **Key Components Created:**
+1. **`TestDataManager.swift`** - Centralized controller for all test data
+2. **`TestDataSettingsView.swift`** - UI for managing test data settings
+3. **`TEST_DATA_DOCUMENTATION.md`** - Complete documentation of all test data locations
+
+### **How to Toggle Test Data:**
+
+#### **ENABLE Test Data (Development):**
+```swift
+// Automatic in simulator, or use TestDataManager
+TestDataManager.shared.forceEnableTestData = true
+```
+
+#### **DISABLE Test Data (Production):**
+```swift
+// Automatic on real devices
+TestDataManager.shared.forceEnableTestData = false
+```
+
+### **Test Data Locations:**
+
+| Component | File | Status | Control Method |
+|-----------|------|---------|----------------|
+| Watch Heart Rates | `Watch App/HeartRateManager.swift:213-215` | ❌ Disabled | Uncomment block |
+| iPhone Test Data | `HealthManager.swift:149-151` | Now uses TestDataManager | Automatic |
+| Orthostatic Chart | `ContentView.swift:440-456` | ✅ Real Data | Fixed |
+| Daily Graph | `ContentView.swift:1950-1956` | Uses TestDataManager | Automatic |
+| Export Fallback | `ExportView.swift:24-29` | Uses TestDataManager | Automatic |
+
+### **Quick Commands:**
+
+**Clear All Test Data:**
+```swift
+TestDataManager.shared.clearAllTestData()
+```
+
+**Generate Test Data Now:**
+```swift
+if TestDataManager.shared.shouldGenerateTestData(for: .heartRateHistory) {
+    generateRealisticMedicalTestData()
+}
+```
+
+**Check Configuration:**
+```swift
+TestDataManager.shared.logConfiguration()
+```
+
+---
+
+# SecureHeart Multi-Agent Communication System
+
 ## 🔄 **Communication Protocol**
 
 ### **STEP 1: Check for URGENT files EVERY TIME you start work**

@@ -366,10 +366,10 @@
 				DEVELOPMENT_TEAM = G6U69FC9H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSMotionUsageDescription = "Secure Heart uses motion data to detect when you're standing or sitting, which helps provide accurate heart rate context for medical monitoring. This data never leaves your device and is only used for health analysis.";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.securehealthheart";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Secure Heart reads your heart rate data to monitor for POTS episodes and other heart rate irregularities. This data is stored locally on your device for your privacy.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Secure Heart may update your heart rate data to provide context about standing/sitting positions for medical analysis.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Secure Heart uses motion data to detect when you're standing or sitting, which helps provide accurate heart rate context for medical monitoring. This data never leaves your device and is only used for health analysis.";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.securehealthheart;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -397,10 +397,10 @@
 				DEVELOPMENT_TEAM = G6U69FC9H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSMotionUsageDescription = "Secure Heart uses motion data to detect when you're standing or sitting, which helps provide accurate heart rate context for medical monitoring. This data never leaves your device and is only used for health analysis.";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.securehealthheart";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Secure Heart reads your heart rate data to monitor for POTS episodes and other heart rate irregularities. This data is stored locally on your device for your privacy.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Secure Heart may update your heart rate data to provide context about standing/sitting positions for medical analysis.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Secure Heart uses motion data to detect when you're standing or sitting, which helps provide accurate heart rate context for medical monitoring. This data never leaves your device and is only used for health analysis.";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.securehealthheart;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

@@ -214,12 +214,19 @@ class HeartRateManager: NSObject, ObservableObject {
         // // Add test data for simulator testing
         // addTestData()
         // #endif
+
+        // Clear any existing test data on real devices
+        #if !targetEnvironment(simulator)
+        orthostaticEvents.removeAll()
+        significantChanges.removeAll()
+        print("🧹 [WATCH] Cleared test data for real device testing")
+        #endif
     }
     
-    #if DEBUG
+    #if DEBUG && targetEnvironment(simulator)
     private var simulationTimer: Timer?
     private var orthostaticTestTimer: Timer?
-    
+
     private func addTestData() {
         let testRates = [72, 85, 93, 110, 125, 145, 160, 135, 95, 78]
         for (index, rate) in testRates.enumerated() {
@@ -746,14 +753,20 @@ class HeartRateManager: NSObject, ObservableObject {
             for sample in heartRateSamples {
                 let heartRateUnit = HKUnit.count().unitDivided(by: .minute())
                 let heartRate = Int(sample.quantity.doubleValue(for: heartRateUnit))
-                
+
                 let reading = HeartRateReading(heartRate: heartRate, timestamp: sample.endDate)
-                
-                // Update current heart rate
+
+                // Only update current heart rate for recent samples (within 10 seconds)
+                // and only call updateHeartRate for the most recent sample to avoid excessive calls
                 if sample.endDate > Date().addingTimeInterval(-10) {
-                    self.updateHeartRate(heartRate)
+                    // Only process the most recent sample or significant changes
+                    if sample == heartRateSamples.last || abs(heartRate - self.currentHeartRate) >= self.minorChangeThreshold {
+                        self.updateHeartRate(heartRate)
+                    } else {
+                        print("⏰ [WATCH] Skipping updateHeartRate for sample: \(heartRate) BPM (not most recent)")
+                    }
                 }
-                
+
                 // Add to history
                 self.heartRateHistory.append(reading)
             }
