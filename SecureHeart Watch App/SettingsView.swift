@@ -15,6 +15,7 @@ struct SettingsView: View {
     @AppStorage("selectedColorTheme") private var selectedColorTheme = 0
     @AppStorage("recordingInterval") private var recordingInterval = 60.0
     @AppStorage("showTimeOnWatch") private var showTimeOnWatch = true
+    @AppStorage("alertSoundEnabled_v1") private var alertSoundEnabled = true
     
     private let colorThemes: [ColorTheme] = [
         ColorTheme(
@@ -145,7 +146,7 @@ struct SettingsView: View {
                                 .padding(.vertical, 6)
                         }
                     }
-                    
+
                     // Time display toggle
                     HStack {
                         Image(systemName: "clock")
@@ -154,7 +155,20 @@ struct SettingsView: View {
                         Toggle("Show Theme Time", isOn: $showTimeOnWatch)
                     }
                 }
-                
+
+                Section("Alerts") {
+                    // Alert sound toggle
+                    HStack {
+                        Image(systemName: alertSoundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                            .foregroundColor(alertSoundEnabled ? .green : .gray)
+                            .frame(width: 24)
+                        Toggle("Alert Sound", isOn: $alertSoundEnabled)
+                    }
+                }
+                .onChange(of: alertSoundEnabled) { newValue in
+                    print("🔊 [SETTINGS] Alert sound \(newValue ? "enabled" : "muted")")
+                }
+
                 Section("Data") {
                     NavigationLink(destination: HeartRateView()) {
                         HStack {
@@ -164,7 +178,11 @@ struct SettingsView: View {
                             Text("History")
                         }
                     }
-                    
+
+                    // MARK: - MVP2 FEATURE - Send Test Data to iPhone
+                    // TODO: Re-enable for MVP2 when iPhone app is available
+                    // Commented out: 2025-11-16 for MVP1 standalone watch app
+                    /*
                     Button(action: {
                         heartRateManager.sendTestDataToiPhone()
                     }) {
@@ -176,6 +194,7 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                         }
                     }
+                    */
                 }
                 
                 // Section("Debug - Posture Detection") - Commented out for MVP2
@@ -745,6 +764,7 @@ extension Color {
 // MARK: - BPM Text Color View
 struct BPMTextColorView: View {
     @AppStorage("bpmTextColor") private var selectedBPMTextColor = 12 // Default to white
+    @AppStorage("bpmTextColorUserChosen") private var bpmTextColorUserChosen = false // Track user choice
     
     // All the same colors as background picker
     let bpmTextColors: [Color] = [
@@ -820,6 +840,7 @@ struct BPMTextColorView: View {
                                 .animation(.easeInOut(duration: 0.2), value: selectedBPMTextColor == index)
                                 .onTapGesture {
                                     selectedBPMTextColor = index
+                                    bpmTextColorUserChosen = true // Mark that user explicitly chose a color
                                 }
                         }
                     }

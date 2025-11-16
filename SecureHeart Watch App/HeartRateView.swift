@@ -23,7 +23,8 @@ struct HeartRateView: View {
     // Digital Crown sensitivity setting removed
     @AppStorage("showTimeOnWatch") private var showTimeOnWatch = true
     @AppStorage("watchFaceBackgroundColor") private var selectedBackgroundColor = 14 // 14=Black, 0=Red
-    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 3 // Default to green
+    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 14 // Default to black
+    @AppStorage("bpmTextColorUserChosen") private var bpmTextColorUserChosen = false // Track if user explicitly chose BPM color
     
     // Custom theme colors stored as hex strings
     @AppStorage("customLowColor") private var customLowColorHex = "#007AFF" // Blue
@@ -351,13 +352,14 @@ struct HeartRateView: View {
             // Set better defaults only on first launch
             selectedWatchFace = 3           // Chunky theme (Face 3)
             selectedBackgroundColor = 14    // Black background
-            selectedBPMTextColor = 3        // Green text
+            selectedBPMTextColor = 14       // Black text (matches background)
             selectedColorTheme = 0          // Classic color theme (heart rate zone guidance)
+            bpmTextColorUserChosen = false  // User hasn't chosen BPM color yet
 
             // Mark that app has launched so we don't override user settings
             UserDefaults.standard.set(true, forKey: "SecureHeartHasLaunched")
 
-            print("✅ First-launch defaults applied: Classic theme, black background")
+            print("✅ First-launch defaults applied: Classic theme, black background, black BPM text")
         } else {
             print("👤 Preserving user's chosen theme: \(selectedColorTheme)")
         }
@@ -525,11 +527,7 @@ struct HeartRateView: View {
             endPoint: .bottomTrailing
         )
     }
-    
-    private var pastelHeartRateColor: Color {
-        return heartRateColor // Now just use the same theme-based color
-    }
-    
+
     // All background colors matching the expanded BackgroundThemeView palette
     private let allBackgroundColors: [Color] = [
         // Row 1: Primary colors
@@ -622,10 +620,30 @@ struct HeartRateView: View {
         }
         return .white
     }
+
+    // Effective BPM text color - auto-matches background or uses zone colors if user hasn't explicitly chosen
+    private var effectiveBPMTextColor: Color {
+        // If user has explicitly chosen a BPM color, use that
+        if bpmTextColorUserChosen {
+            return customBPMTextColor
+        }
+
+        // Otherwise, auto-match behavior depends on watch face type:
+        // Faces WITH hearts (Classic=0, Details=1): Match background color
+        if selectedWatchFace == 0 || selectedWatchFace == 1 {
+            return themeBackgroundColor
+        }
+
+        // Faces WITHOUT hearts (Minimal=2, Chunky=3, Numbers Only=4, Watch Face=5):
+        // Use heart rate zone colors (blue/green/yellow/red based on BPM)
+        return heartRateColor
+    }
     
     private var heartRateTextColor: Color {
-        // Use the custom BPM text color instead of automatic theme text color
-        return customBPMTextColor
+        // For watch faces with colored hearts (Classic, Details):
+        // Use automatic text color that contrasts with background
+        // (black text on light backgrounds, white text on dark backgrounds)
+        return themeTextColor
     }
     
     private var heartBeatDuration: Double {
@@ -664,11 +682,11 @@ struct HeartRateView: View {
                 VStack(spacing: 2) {
                     Text("\(heartRateManager.currentHeartRate)")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(heartRateTextColor)
-                    
+                        .foregroundColor(effectiveBPMTextColor)
+
                     Text("BPM")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(heartRateTextColor.opacity(0.8))
+                        .foregroundColor(effectiveBPMTextColor.opacity(0.8))
                 }
             }
             .offset(y: 15)
@@ -726,11 +744,11 @@ struct HeartRateView: View {
                     VStack(spacing: 2) {
                         Text("\(heartRateManager.currentHeartRate)")
                             .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(heartRateTextColor)
-                        
+                            .foregroundColor(effectiveBPMTextColor)
+
                         Text("BPM")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(heartRateTextColor.opacity(0.8))
+                            .foregroundColor(effectiveBPMTextColor.opacity(0.8))
                     }
                 }
                 .offset(y: 5)
@@ -761,7 +779,7 @@ struct HeartRateView: View {
     private var minimalThemeView: some View {
         ZStack {
             VStack(spacing: 20) {
-                // Minimal - uses theme colors
+                // Minimal - uses theme colors or zone colors
                 if isRainbowTheme {
                     Text("\(heartRateManager.currentHeartRate)")
                         .font(.system(size: 72, weight: .thin, design: .rounded))
@@ -773,7 +791,7 @@ struct HeartRateView: View {
                 } else {
                     Text("\(heartRateManager.currentHeartRate)")
                         .font(.system(size: 72, weight: .thin, design: .rounded))
-                        .foregroundColor(heartRateColor)
+                        .foregroundColor(effectiveBPMTextColor)
                 }
                 
                 if isRainbowTheme {
@@ -811,7 +829,7 @@ struct HeartRateView: View {
                 } else {
                     Text(currentTimeString)
                         .font(.system(size: 28, weight: .medium, design: .rounded))
-                        .foregroundColor(pastelHeartRateColor)
+                        .foregroundColor(effectiveBPMTextColor)
                 }
             }
             
@@ -828,7 +846,7 @@ struct HeartRateView: View {
                 } else {
                     Text("\(heartRateManager.currentHeartRate)")
                         .font(.system(size: 64, weight: .bold, design: .rounded))
-                        .foregroundColor(pastelHeartRateColor)
+                        .foregroundColor(effectiveBPMTextColor)
                 }
                     
                     // Trend arrows
@@ -844,10 +862,10 @@ struct HeartRateView: View {
                             } else {
                                 Image(systemName: "arrow.up")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(pastelHeartRateColor)
+                                    .foregroundColor(effectiveBPMTextColor)
                                 Image(systemName: "arrow.up")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(pastelHeartRateColor)
+                                    .foregroundColor(effectiveBPMTextColor)
                             }
                         } else if heartRateManager.heartRateDelta > 0 {
                             if isRainbowTheme {
@@ -857,7 +875,7 @@ struct HeartRateView: View {
                             } else {
                                 Image(systemName: "arrow.up")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(pastelHeartRateColor)
+                                    .foregroundColor(effectiveBPMTextColor)
                             }
                         } else if heartRateManager.heartRateDelta < -10 {
                             if isRainbowTheme {
@@ -870,10 +888,10 @@ struct HeartRateView: View {
                             } else {
                                 Image(systemName: "arrow.down")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(pastelHeartRateColor)
+                                    .foregroundColor(effectiveBPMTextColor)
                                 Image(systemName: "arrow.down")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(pastelHeartRateColor)
+                                    .foregroundColor(effectiveBPMTextColor)
                             }
                         } else if heartRateManager.heartRateDelta < 0 {
                             if isRainbowTheme {
@@ -883,7 +901,7 @@ struct HeartRateView: View {
                             } else {
                                 Image(systemName: "arrow.down")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(pastelHeartRateColor)
+                                    .foregroundColor(effectiveBPMTextColor)
                             }
                         } else {
                             if isRainbowTheme {
@@ -893,7 +911,7 @@ struct HeartRateView: View {
                             } else {
                                 Image(systemName: "minus")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(pastelHeartRateColor)
+                                    .foregroundColor(effectiveBPMTextColor)
                             }
                         }
                     }
@@ -915,7 +933,7 @@ struct HeartRateView: View {
             } else {
                 Text("\(heartRateManager.currentHeartRate)")
                     .font(.system(size: 90, weight: .thin, design: .rounded))
-                    .foregroundColor(pastelHeartRateColor)
+                    .foregroundColor(effectiveBPMTextColor)
             }
         }
     }

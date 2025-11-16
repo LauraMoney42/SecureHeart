@@ -13,7 +13,8 @@ struct WatchFaceView: View {
     @State private var pulseAnimation = false
     @State private var colonVisible = true
     @AppStorage("watchFaceBackgroundColor") private var selectedBackgroundColor = 0
-    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 12 // Default to white
+    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 14 // Default to black
+    @AppStorage("bpmTextColorUserChosen") private var bpmTextColorUserChosen = false // Track if user explicitly chose BPM color
     
     // Timer to update time every second
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -110,7 +111,7 @@ struct WatchFaceView: View {
         Color(red: 0.55, green: 0.85, blue: 0.93), // Sky Blue
         Color(red: 0.86, green: 0.78, blue: 0.93)  // Lavender
     ]
-    
+
     // Custom BPM text color based on user selection
     private var customBPMTextColor: Color {
         if selectedBPMTextColor < allBPMTextColors.count {
@@ -118,7 +119,18 @@ struct WatchFaceView: View {
         }
         return .white
     }
-    
+
+    // Effective BPM text color - uses zone colors by default (no heart in this view)
+    private var effectiveBPMTextColor: Color {
+        // If user has explicitly chosen a BPM color, use that
+        if bpmTextColorUserChosen {
+            return customBPMTextColor
+        }
+
+        // Otherwise, use heart rate zone colors (this face has no heart)
+        return heartColor
+    }
+
     var body: some View {
         ZStack {
             // Background with theme support
@@ -142,7 +154,7 @@ struct WatchFaceView: View {
 
                 Text("\(heartRateManager.currentHeartRate)")
                     .font(.system(size: 92, weight: .light, design: .default))
-                    .foregroundColor(customBPMTextColor)
+                    .foregroundColor(effectiveBPMTextColor)
 
                 // Layer 3: Bottom spacer
                 Spacer()
@@ -241,7 +253,8 @@ struct WatchFaceView: View {
 struct WatchFaceViewMinimal: View {
     @EnvironmentObject var heartRateManager: HeartRateManager
     @State private var currentTime = Date()
-    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 12 // Default to white
+    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 14 // Default to black
+    @AppStorage("bpmTextColorUserChosen") private var bpmTextColorUserChosen = false // Track user choice
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     // BPM text colors - same palette as background colors
@@ -278,26 +291,37 @@ struct WatchFaceViewMinimal: View {
         }
         return .white
     }
-    
+
+    // Effective BPM text color - uses zone colors by default (no heart displayed prominently)
+    private var effectiveBPMTextColor: Color {
+        // If user has explicitly chosen a BPM color, use that
+        if bpmTextColorUserChosen {
+            return customBPMTextColor
+        }
+
+        // Otherwise, use heart rate zone colors
+        return heartColor
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
+
             VStack(spacing: 30) {
                 // Time only - very large
                 Text(timeString)
                     .font(.system(size: 72, weight: .ultraLight, design: .rounded))
                     .foregroundColor(.white)
-                
+
                 // Heart rate - smaller
                 HStack(spacing: 4) {
                     Image(systemName: "heart.fill")
                         .font(.system(size: 14))
                         .foregroundColor(heartColor)
-                    
+
                     Text("\(heartRateManager.currentHeartRate)")
                         .font(.system(size: 20, weight: .regular))
-                        .foregroundColor(customBPMTextColor.opacity(0.8))
+                        .foregroundColor(effectiveBPMTextColor.opacity(0.8))
                 }
             }
         }
@@ -329,7 +353,8 @@ struct WatchFaceViewMinimal: View {
 struct WatchFaceViewAnalog: View {
     @EnvironmentObject var heartRateManager: HeartRateManager
     @State private var currentTime = Date()
-    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 12 // Default to white
+    @AppStorage("bpmTextColor") private var selectedBPMTextColor = 14 // Default to black
+    @AppStorage("bpmTextColorUserChosen") private var bpmTextColorUserChosen = false // Track user choice
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     // BPM text colors - same palette as background colors
@@ -366,11 +391,22 @@ struct WatchFaceViewAnalog: View {
         }
         return .white
     }
-    
+
+    // Effective BPM text color - uses zone colors by default
+    private var effectiveBPMTextColor: Color {
+        // If user has explicitly chosen a BPM color, use that
+        if bpmTextColorUserChosen {
+            return customBPMTextColor
+        }
+
+        // Otherwise, use heart rate zone colors
+        return heartColor
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
+
             // Clock face circle
             Circle()
                 .stroke(Color.white.opacity(0.2), lineWidth: 2)
@@ -409,14 +445,14 @@ struct WatchFaceViewAnalog: View {
                     Image(systemName: "heart.fill")
                         .font(.system(size: 16))
                         .foregroundColor(heartColor)
-                    
+
                     Text("\(heartRateManager.currentHeartRate)")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(customBPMTextColor)
-                    
+                        .foregroundColor(effectiveBPMTextColor)
+
                     Text("BPM")
                         .font(.system(size: 12))
-                        .foregroundColor(customBPMTextColor.opacity(0.6))
+                        .foregroundColor(effectiveBPMTextColor.opacity(0.6))
                 }
                 .padding(.bottom, 20)
             }

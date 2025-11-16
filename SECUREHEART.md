@@ -93,52 +93,96 @@
 - **Anonymous testing**: Ensure Firebase system truly anonymous
 - **Data audit**: Regular checks that only necessary data is stored
 
-## 🚀 MVP1 SCOPE
+## 🚀 MVP1 SCOPE - STANDALONE APPLE WATCH APP
 
-### **In Scope:**
-- Real-time heart rate monitoring with large, readable BPM display
-- Color-coded heart rate zones (Blue: <80, Green: 80-120, Yellow: 120-150, Red: >150)
-- Multiple watch face themes (Classic, Minimal, Chunky, Numbers Only, Watch Face)
-- Pulse animation synchronized to heart rate
-- 60-minute local heart rate history
-- Emergency contact system with Firebase backend
-- POTS-aware threshold detection
-- iPhone companion app with dashboard and settings
+**🎯 STRATEGIC SHIFT (Nov 16, 2025):** Watch app first, iPhone companion becomes MVP2
+**Target Ship Date:** November 23, 2025 (1 week)
+**Rationale:** Faster time to market, validate core POTS monitoring value, simpler App Store review
 
-### **Out of Scope for MVP1:**
-- Cloud synchronization
-- Share with healthcare providers
-- Custom heart rate zones
-- Notification alerts
-- Workout integration
-- Historical data beyond 60 minutes
-- Complications (due to refresh limitations)
+### **✅ In Scope for MVP1 (Standalone Watch App):**
+- ✅ Real-time heart rate monitoring with large, readable BPM display
+- ✅ Color-coded heart rate zones (Blue: <80, Green: 80-120, Yellow: 120-150, Red: >150)
+- ✅ 14 color theme variants (fully customizable)
+- ✅ 6 watch face styles (Classic, Minimal, Chunky, Numbers Only, Watch Face, etc.)
+- ✅ Pulse animation synchronized to heart rate
+- ✅ POTS-aware orthostatic detection (+30 BPM standing response)
+- ✅ Posture detection (Standing/Sitting/Walking via CoreMotion)
+- ✅ Haptic feedback for heart rate events
+- ✅ Always-on display support (watchOS integration)
+- ✅ Persistent local storage (heart rate history saved to watch)
+- ✅ Watch-side settings UI (emergency thresholds configurable on watch)
+- ✅ Session-based heart rate history
+- ✅ Local orthostatic event logging
 
-### **Success Criteria:**
-- Reliable heart rate display within 10 seconds
-- Smooth navigation between watch faces
-- Successful data sync between Watch and iPhone
-- Export functionality works correctly
-- Zero external data transmission verified
-- App passes security review
-- Stable performance during extended use
+### **📦 Deferred to MVP2 (iPhone Companion App - Week 4-8):**
+- 📦 Emergency contact notifications (SMS/Email/Push)
+- 📦 Firebase integration and cloud functions
+- 📦 Contact verification system
+- 📦 Data export (CSV/PDF reports)
+- 📦 Weekly/monthly trend graphs (better on iPhone screen)
+- 📦 Medical data encryption (for cloud sync)
+- 📦 iPhone dashboard and settings sync
+- 📦 WatchConnectivity data synchronization
 
-## 🔄 CURRENT IMPLEMENTATION STATUS
+### **❌ Out of Scope for MVP1:**
+- Cloud synchronization (privacy-first local storage only)
+- Share with healthcare providers (MVP3+)
+- Custom heart rate zones (use medical defaults)
+- System notification alerts (haptic alerts included)
+- Workout integration (future feature)
+- Complications (watchOS refresh limitations)
 
-### **✅ Completed:**
-- Firebase-only emergency contact system (no Twilio/SendGrid)
-- Native iOS messaging for contact invitations
-- iOS Contacts integration for easy contact selection
-- Location sharing preferences with user consent
-- Emergency threshold settings (POTS-aware)
-- Confirmation dialogs with 15-second countdown
-- Anonymous Firebase authentication
-- Bidirectional contact linking system
+### **Success Criteria for MVP1:**
+- [ ] Reliable heart rate display within 10 seconds on real Apple Watch
+- [ ] All 14 color themes work smoothly
+- [ ] All 6 watch face styles display correctly
+- [ ] Data persists after app restart
+- [ ] Orthostatic detection works without iPhone
+- [ ] Settings save locally to watch
+- [ ] Battery life exceeds 24 hours
+- [ ] Zero external data transmission verified
+- [ ] App passes App Store security review
+- [ ] Stable performance during 24-hour continuous use
+- [ ] Works completely offline (no iPhone required)
 
-### **🎯 Active Development:**
-- UI cleanup and streamlining
-- Apple best practices implementation
-- Privacy-first design patterns
+## 🔄 CURRENT IMPLEMENTATION STATUS (Updated Nov 16, 2025)
+
+### **✅ Completed (MVP1 - Watch App):**
+- ✅ Real-time heart rate monitoring (HealthKit integration)
+- ✅ Color-coded heart rate zones with 14 theme variants
+- ✅ 6 watch face style options
+- ✅ POTS-aware orthostatic detection
+- ✅ Posture detection via CoreMotion
+- ✅ Haptic feedback system
+- ✅ Always-on display support
+- ✅ Session-based heart rate history
+
+### **🔧 In Progress (MVP1 - Week of Nov 16-23):**
+- 🔄 Persistent local storage (WatchDataStore class)
+- 🔄 Watch-side settings UI for emergency thresholds
+- 🔄 Commenting out WatchConnectivity for standalone mode
+- 🔄 Real device testing and optimization
+- 🔄 App Store submission preparation
+
+### **📦 Deferred to MVP2 (iPhone Companion App - Week 4-8):**
+- 📦 Firebase-based emergency contact system
+- 📦 Native iOS messaging for contact invitations
+- 📦 iOS Contacts integration for easy contact selection
+- 📦 Location sharing preferences with user consent
+- 📦 Emergency threshold settings (POTS-aware) - synced from iPhone
+- 📦 Confirmation dialogs with 15-second countdown
+- 📦 Anonymous Firebase authentication
+- 📦 Bidirectional contact linking system
+- 📦 Data export (CSV/PDF)
+- 📦 Weekly/monthly trend graphs
+- 📦 Medical data encryption
+
+### **🎯 Active Development Focus:**
+- Standalone watch app independence (remove iPhone dependencies)
+- Local data persistence (UserDefaults + file storage)
+- Watch-side configuration UI
+- Battery optimization for 24+ hour use
+- App Store privacy compliance
 
 ## 📝 DEVELOPMENT NOTES
 

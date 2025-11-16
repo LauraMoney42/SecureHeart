@@ -30,19 +30,19 @@ class TestDataManager: ObservableObject {
     // MARK: - Feature Toggles
 
     /// Generate historical heart rate data
-    @AppStorage("testData.heartRateHistory") var generateHeartRateHistory = true
+    @AppStorage("testData.heartRateHistory") var generateHeartRateHistory = false  // DISABLED for real device testing
 
     /// Generate orthostatic events
-    @AppStorage("testData.orthostaticEvents") var generateOrthostaticEvents = true
+    @AppStorage("testData.orthostaticEvents") var generateOrthostaticEvents = false  // DISABLED for real device testing
 
     /// Generate daily pattern data
-    @AppStorage("testData.dailyPatterns") var generateDailyPatterns = true
+    @AppStorage("testData.dailyPatterns") var generateDailyPatterns = false  // DISABLED for real device testing
 
     /// Generate export sample data when no real data exists
-    @AppStorage("testData.exportSamples") var generateExportSamples = true
+    @AppStorage("testData.exportSamples") var generateExportSamples = false  // DISABLED for real device testing
 
     /// Generate real-time heart rate updates
-    @AppStorage("testData.liveUpdates") var generateLiveUpdates = true
+    @AppStorage("testData.liveUpdates") var generateLiveUpdates = false  // DISABLED for real device testing
 
     // MARK: - Test Data Configuration
 

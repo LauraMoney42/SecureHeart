@@ -12,6 +12,160 @@ import CoreMotion
 import WatchKit
 #endif
 
+// MARK: - Data Models (MVP1 - Codable for WatchDataStore)
+
+// MARK: - MVP1 FEATURE - Codable for Persistent Storage
+struct HeartRateReading: Identifiable, Codable {
+    let id: UUID
+    let heartRate: Int
+    let timestamp: Date
+    let delta: Int
+    let context: String?
+
+    init(heartRate: Int, timestamp: Date, delta: Int = 0, context: String? = nil, id: UUID = UUID()) {
+        self.id = id
+        self.heartRate = heartRate
+        self.timestamp = timestamp
+        self.delta = delta
+        self.context = context
+    }
+
+    var color: String {
+        if heartRate < 80 {
+            return "blue"
+        } else if heartRate >= 80 && heartRate <= 120 {
+            return "green"
+        } else if heartRate > 120 && heartRate <= 150 {
+            return "yellow"
+        } else {
+            return "red"
+        }
+    }
+
+    var deltaText: String {
+        guard abs(delta) >= 30 else { return "" } // Only show changes of 30+ BPM
+        let arrow = delta > 0 ? "↑" : "↓"
+        return "\(arrow)\(abs(delta))"
+    }
+
+    var formattedDateTime: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a MM/dd/yy"
+        return formatter.string(from: timestamp)
+    }
+}
+
+struct SignificantChange: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let fromRate: Int
+    let toRate: Int
+    let delta: Int
+    let isMajor: Bool // true if 50+ bpm change
+
+    var description: String {
+        "\(delta > 0 ? "↑" : "↓") \(abs(delta)) BPM"
+    }
+}
+
+// MARK: - MVP1 FEATURE - Codable for Persistent Storage
+struct OrthostaticEvent: Identifiable, Codable {
+    let id: UUID
+    let timestamp: Date
+    let baselineHeartRate: Int
+    let peakHeartRate: Int
+    let increase: Int
+    let duration: TimeInterval // Total standing duration when event was detected
+    let sustainedDuration: TimeInterval // How long heart rate stayed elevated (30+ BPM)
+    let recoveryTime: TimeInterval? // Time to recover to within 10 BPM of baseline, nil if not recovered
+    let heartRatePattern: [HeartRatePoint] // Heart rate measurements during the event
+    let isRecovered: Bool // Whether heart rate returned to near baseline
+
+    init(timestamp: Date, baselineHeartRate: Int, peakHeartRate: Int, increase: Int,
+         duration: TimeInterval, sustainedDuration: TimeInterval, recoveryTime: TimeInterval?,
+         heartRatePattern: [HeartRatePoint], isRecovered: Bool, id: UUID = UUID()) {
+        self.id = id
+        self.timestamp = timestamp
+        self.baselineHeartRate = baselineHeartRate
+        self.peakHeartRate = peakHeartRate
+        self.increase = increase
+        self.duration = duration
+        self.sustainedDuration = sustainedDuration
+        self.recoveryTime = recoveryTime
+        self.heartRatePattern = heartRatePattern
+        self.isRecovered = isRecovered
+    }
+
+    struct HeartRatePoint: Codable {
+        let heartRate: Int
+        let timeFromStanding: TimeInterval // Seconds since standing started
+    }
+
+    var severity: OrthostacSeverity {
+        // Enhanced severity based on both peak increase and sustained duration
+        let baseSeverity = switch increase {
+        case 30..<40: OrthostacSeverity.mild
+        case 40..<50: OrthostacSeverity.moderate
+        case 50...: OrthostacSeverity.severe
+        default: OrthostacSeverity.normal
+        }
+
+        // Upgrade severity for sustained elevation (clinical criteria: 30+ BPM for 10+ minutes)
+        if sustainedDuration >= 600 && increase >= 30 { // 10 minutes sustained
+            return .severe
+        } else if sustainedDuration >= 180 { // 3+ minutes sustained
+            return baseSeverity == .mild ? .moderate : baseSeverity
+        }
+
+        return baseSeverity
+    }
+
+    var description: String {
+        let sustainedText = sustainedDuration >= 60 ? String(format: " (sustained %.0f min)", sustainedDuration / 60) : ""
+        let recoveryText = if let recoveryTime = recoveryTime {
+            String(format: ", recovered in %.0fs", recoveryTime)
+        } else if isRecovered {
+            ", recovered"
+        } else {
+            ", not recovered"
+        }
+        return "Standing: +\(increase) BPM (\(baselineHeartRate)→\(peakHeartRate))\(sustainedText)\(recoveryText)"
+    }
+
+    var clinicalSummary: String {
+        let severityIndicator = sustainedDuration >= 600 && increase >= 30 ? " [Sustained Response]" : ""
+        return "Peak: +\(increase) BPM, Sustained: \(Int(sustainedDuration))s\(severityIndicator)"
+    }
+}
+
+// MARK: - MVP1 FEATURE - Codable for Persistent Storage
+enum OrthostacSeverity: String, CaseIterable, Codable {
+    case normal = "Normal"
+    case mild = "Mild Response"
+    case moderate = "Moderate Response"
+    case severe = "Significant Response"
+
+    var color: String {
+        switch self {
+        case .normal: return "green"
+        case .mild: return "yellow"
+        case .moderate: return "orange"
+        case .severe: return "red"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .normal: return "checkmark.circle.fill"
+        case .mild: return "exclamationmark.circle.fill"
+        case .moderate: return "exclamationmark.triangle.fill"
+        case .severe: return "exclamationmark.octagon.fill"
+        }
+    }
+}
+
+// MARK: - Heart Rate Manager
+
 class HeartRateManager: NSObject, ObservableObject {
     static let sharedInstance = HeartRateManager()
     static var shared: HeartRateManager? {
@@ -62,136 +216,39 @@ class HeartRateManager: NSObject, ObservableObject {
     // Recording interval (configurable via settings)
     @Published var recordingInterval: TimeInterval = 60.0
     private var lastRecordedTime: Date? = nil
-    
-    struct HeartRateReading: Identifiable {
-        let id = UUID()
-        let heartRate: Int
-        let timestamp: Date
-        let delta: Int
-        let context: String?
-        
-        init(heartRate: Int, timestamp: Date, delta: Int = 0, context: String? = nil) {
-            self.heartRate = heartRate
-            self.timestamp = timestamp
-            self.delta = delta
-            self.context = context
-        }
-        
-        var color: String {
-            if heartRate < 80 {
-                return "blue"
-            } else if heartRate >= 80 && heartRate <= 120 {
-                return "green"
-            } else if heartRate > 120 && heartRate <= 150 {
-                return "yellow"
-            } else {
-                return "red"
-            }
-        }
-        
-        var deltaText: String {
-            guard abs(delta) >= 30 else { return "" } // Only show changes of 30+ BPM
-            let arrow = delta > 0 ? "↑" : "↓"
-            return "\(arrow)\(abs(delta))"
-        }
-        
-        var formattedDateTime: String {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "h:mm a MM/dd/yy"
-            return formatter.string(from: timestamp)
-        }
+
+    // Alert sound settings (haptics always enabled for accessibility)
+    private var alertSoundEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "alertSoundEnabled_v1") }
+        set { UserDefaults.standard.set(newValue, forKey: "alertSoundEnabled_v1") }
     }
-    
-    struct SignificantChange: Identifiable {
-        let id = UUID()
-        let timestamp: Date
-        let fromRate: Int
-        let toRate: Int
-        let delta: Int
-        let isMajor: Bool // true if 50+ bpm change
-        
-        var description: String {
-            "\(delta > 0 ? "↑" : "↓") \(abs(delta)) BPM"
-        }
-    }
-    
-    struct OrthostaticEvent: Identifiable {
-        let id = UUID()
-        let timestamp: Date
-        let baselineHeartRate: Int
-        let peakHeartRate: Int
-        let increase: Int
-        let duration: TimeInterval // Total standing duration when event was detected
-        let sustainedDuration: TimeInterval // How long heart rate stayed elevated (30+ BPM)
-        let recoveryTime: TimeInterval? // Time to recover to within 10 BPM of baseline, nil if not recovered
-        let heartRatePattern: [HeartRatePoint] // Heart rate measurements during the event
-        let isRecovered: Bool // Whether heart rate returned to near baseline
-        
-        struct HeartRatePoint {
-            let heartRate: Int
-            let timeFromStanding: TimeInterval // Seconds since standing started
-        }
-        
-        var severity: OrthostacSeverity {
-            // Enhanced severity based on both peak increase and sustained duration
-            let baseSeverity = switch increase {
-            case 30..<40: OrthostacSeverity.mild
-            case 40..<50: OrthostacSeverity.moderate
-            case 50...: OrthostacSeverity.severe
-            default: OrthostacSeverity.normal
-            }
-            
-            // Upgrade severity for sustained elevation (clinical criteria: 30+ BPM for 10+ minutes)
-            if sustainedDuration >= 600 && increase >= 30 { // 10 minutes sustained
-                return .severe
-            } else if sustainedDuration >= 180 { // 3+ minutes sustained
-                return baseSeverity == .mild ? .moderate : baseSeverity
-            }
-            
-            return baseSeverity
-        }
-        
-        var description: String {
-            let sustainedText = sustainedDuration >= 60 ? String(format: " (sustained %.0f min)", sustainedDuration / 60) : ""
-            let recoveryText = if let recoveryTime = recoveryTime {
-                String(format: ", recovered in %.0fs", recoveryTime)
-            } else if isRecovered {
-                ", recovered"
-            } else {
-                ", not recovered"
-            }
-            return "Standing: +\(increase) BPM (\(baselineHeartRate)→\(peakHeartRate))\(sustainedText)\(recoveryText)"
-        }
-        
-        var clinicalSummary: String {
-            let severityIndicator = sustainedDuration >= 600 && increase >= 30 ? " [Sustained Response]" : ""
-            return "Peak: +\(increase) BPM, Sustained: \(Int(sustainedDuration))s\(severityIndicator)"
-        }
-    }
-    
-    enum OrthostacSeverity: String, CaseIterable {
-        case normal = "Normal"
-        case mild = "Mild Response"
-        case moderate = "Moderate Response"
-        case severe = "Significant Response"
-        
-        var color: String {
-            switch self {
-            case .normal: return "green"
-            case .mild: return "yellow"
-            case .moderate: return "orange"
-            case .severe: return "red"
-            }
-        }
-    }
-    
+
+    // MARK: - MVP1 FEATURE - Persistent Storage
+    private var persistenceTimer: Timer?
+    private let persistenceInterval: TimeInterval = 60.0 // Auto-save every 60 seconds
+
+    // MARK: - Initialization
+
     override init() {
         super.init()
         print("🚀 [WATCH] HeartRateManager initializing...")
+
+        // Set default for alert sound (enabled by default)
+        if !UserDefaults.standard.bool(forKey: "alertSoundEnabled_initialized") {
+            alertSoundEnabled = true
+            UserDefaults.standard.set(true, forKey: "alertSoundEnabled_initialized")
+        }
+
+        // MARK: - MVP1 FEATURE - Load Persistent Data from Watch Storage
+        loadPersistedData()
+
         requestAuthorization()
 
         // Initialize clean motion detection
         setupMotionDetection()
+
+        // MARK: - MVP1 FEATURE - Start Periodic Auto-Save
+        startPeriodicPersistence()
         
         // Start monitoring after a short delay for authorization
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -209,229 +266,42 @@ class HeartRateManager: NSObject, ObservableObject {
             object: nil
         )
         
-        // COMMENTED OUT FOR REAL DEVICE TESTING
-        // #if DEBUG && targetEnvironment(simulator)
-        // // Add test data for simulator testing
-        // addTestData()
-        // #endif
-
-        // Clear any existing test data on real devices
-        #if !targetEnvironment(simulator)
-        orthostaticEvents.removeAll()
-        significantChanges.removeAll()
-        print("🧹 [WATCH] Cleared test data for real device testing")
+        // MARK: - Test Data Generation (Disabled by Default)
+        // Test data generation is now in TestDataGenerator.swift
+        // To enable test data, uncomment the following lines:
+        /*
+        #if DEBUG && targetEnvironment(simulator)
+        let testDataGenerator = TestDataGenerator(heartRateManager: self)
+        testDataGenerator.startTestDataGeneration()
+        print("🧪 [TEST] Test data generation started - POTS episodes will simulate every 30s")
         #endif
+        */
     }
-    
-    #if DEBUG && targetEnvironment(simulator)
-    private var simulationTimer: Timer?
-    private var orthostaticTestTimer: Timer?
 
-    private func addTestData() {
-        let testRates = [72, 85, 93, 110, 125, 145, 160, 135, 95, 78]
-        for (index, rate) in testRates.enumerated() {
-            let reading = HeartRateReading(
-                heartRate: rate, 
-                timestamp: Date().addingTimeInterval(-Double(index * 60))
-            )
-            heartRateHistory.append(reading)
-        }
-        currentHeartRate = testRates.first ?? 72
-        
-        // Add some test orthostatic events for demonstration
-        addTestOrthostaticEvents()
-        
-        // Simulate changing heart rate based on recording interval setting
-        simulationTimer = Timer.scheduledTimer(withTimeInterval: recordingInterval, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            let randomRate = Int.random(in: 60...180)
-            DispatchQueue.main.async {
-                let previousRate = self.heartRateHistory.last?.heartRate ?? 0
-                let delta = previousRate > 0 ? randomRate - previousRate : 0
-                var context: String? = nil
-                
-                // Generate context for significant changes
-                if abs(delta) >= 30 {
-                    if delta > 0 {
-                        context = "Standing +\(delta)BPM"
-                    } else {
-                        context = "Sitting \(delta)BPM"
-                    }
-                }
-                
-                self.updateHeartRate(randomRate)
-                let reading = HeartRateReading(heartRate: randomRate, timestamp: Date(), delta: delta, context: context)
-                
-                // Only add significant readings to history
-                if self.shouldRecordHeartRateEntry(heartRate: randomRate, delta: delta) {
-                    self.heartRateHistory.append(reading)
-                    print("📊 [WATCH] Recording significant HR event: \(randomRate) BPM (Δ\(delta))")
-                }
-                
-                self.cleanupHistory()
-            }
-        }
-        
-        // Simulate orthostatic events every 30 seconds for testing
-        orthostaticTestTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
-            self?.simulateOrthostaticEvent()
-        }
+    // MARK: - Test Data Functions Removed
+    // All test data generation has been moved to TestDataGenerator.swift
+    // This keeps the production code clean and separates test logic
+
+    #if DEBUG && targetEnvironment(simulator)
+    // Removed: addTestData(), addTestOrthostaticEvents(), createStandingResponseEpisode(), etc.
+    // See TestDataGenerator.swift for all test data generation code
+    deinit {
+        // Simulator cleanup if needed
+        print("👋 [WATCH] HeartRateManager deinitialized (simulator)")
     }
-    
-    private func addTestOrthostaticEvents() {
-        // Realistic standing response test data for comprehensive testing
-        
-        // Standing Response #1: Classic pattern - sustained high HR with slow recovery
-        let episode1 = createStandingResponseEpisode(
-            timestamp: Date().addingTimeInterval(-1800), // 30 minutes ago
-            baseline: 68,
-            peakHR: 112, // +44 BPM (significant response: 30+ BPM)
-            sustainedMinutes: 12.5, // Sustained for 12.5 minutes (sustained response criteria: 10+ min)
-            recoverySeconds: 180, // 3 minute recovery
-            hasFullRecovery: true
-        )
-        orthostaticEvents.append(episode1)
-        
-        // Standing Response #2: Severe response with incomplete recovery
-        let episode2 = createStandingResponseEpisode(
-            timestamp: Date().addingTimeInterval(-7200), // 2 hours ago
-            baseline: 72,
-            peakHR: 128, // +56 BPM (severe increase)
-            sustainedMinutes: 8.2, // 8+ minutes sustained
-            recoverySeconds: nil, // No recovery - remained elevated
-            hasFullRecovery: false
-        )
-        orthostaticEvents.append(episode2)
-        
-        // Normal Orthostatic Response (for comparison)
-        let normalResponse = createStandingResponseEpisode(
-            timestamp: Date().addingTimeInterval(-3600), // 1 hour ago
-            baseline: 76,
-            peakHR: 98, // +22 BPM (normal response)
-            sustainedMinutes: 0.8, // Brief elevation
-            recoverySeconds: 45, // Quick recovery
-            hasFullRecovery: true
-        )
-        orthostaticEvents.append(normalResponse)
-        
-        // Mild Response Pattern
-        let mildResponse = createStandingResponseEpisode(
-            timestamp: Date().addingTimeInterval(-450), // 7.5 minutes ago
-            baseline: 70,
-            peakHR: 105, // +35 BPM
-            sustainedMinutes: 6.3, // 6+ minutes sustained
-            recoverySeconds: 95, // Moderate recovery time
-            hasFullRecovery: true
-        )
-        orthostaticEvents.append(mildResponse)
-        
-        print("🩺 [TEST] Created standing response test data with sustained elevations and recovery patterns")
-        
-        // Send test data to iPhone for dashboard display (delayed to ensure WatchConnectivity is ready)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            self.sendTestOrthostaticEventsToiPhone()
-        }
+    #else
+    deinit {
+        // Production builds: clean up persistence
+        persistenceTimer?.invalidate()
+        saveDataToStorage() // Save on app termination
+        print("👋 [WATCH-MVP1] HeartRateManager deinitialized, data saved")
     }
-    
-    private func createStandingResponseEpisode(timestamp: Date, baseline: Int, peakHR: Int, sustainedMinutes: Double, recoverySeconds: Double?, hasFullRecovery: Bool) -> OrthostaticEvent {
-        let increase = peakHR - baseline
-        let sustainedDuration = sustainedMinutes * 60 // Convert to seconds
-        let totalStandingDuration = sustainedDuration + (recoverySeconds ?? 0) + 30 // Add buffer
-        
-        // Create realistic heart rate pattern for the episode
-        let pattern = generateRealisticHeartRatePattern(
-            baseline: baseline,
-            peak: peakHR,
-            sustainedDuration: sustainedDuration,
-            recoveryDuration: recoverySeconds ?? 0
-        )
-        
-        return OrthostaticEvent(
-            timestamp: timestamp,
-            baselineHeartRate: baseline,
-            peakHeartRate: peakHR,
-            increase: increase,
-            duration: totalStandingDuration,
-            sustainedDuration: sustainedDuration,
-            recoveryTime: recoverySeconds,
-            heartRatePattern: pattern,
-            isRecovered: hasFullRecovery
-        )
-    }
-    
-    private func generateRealisticHeartRatePattern(baseline: Int, peak: Int, sustainedDuration: TimeInterval, recoveryDuration: TimeInterval) -> [OrthostaticEvent.HeartRatePoint] {
-        var pattern: [OrthostaticEvent.HeartRatePoint] = []
-        
-        // Phase 1: Initial rise (0-30 seconds)
-        let risePoints = 6
-        for i in 0..<risePoints {
-            let time = Double(i) * 5.0 // Every 5 seconds
-            let progress = Double(i) / Double(risePoints - 1)
-            let hr = baseline + Int(Double(peak - baseline) * progress)
-            pattern.append(OrthostaticEvent.HeartRatePoint(heartRate: hr, timeFromStanding: time))
-        }
-        
-        // Phase 2: Sustained elevation (30 seconds to sustainedDuration)
-        let sustainedPoints = Int(sustainedDuration / 15) // Every 15 seconds during sustained phase
-        for i in 0..<sustainedPoints {
-            let time = 30.0 + (Double(i) * 15.0)
-            // Add realistic variation (±3-8 BPM) during sustained phase
-            let variation = Int.random(in: -5...8)
-            let hr = min(max(peak + variation, baseline + 25), peak + 10) // Keep within reasonable bounds
-            pattern.append(OrthostaticEvent.HeartRatePoint(heartRate: hr, timeFromStanding: time))
-        }
-        
-        // Phase 3: Recovery (if applicable)
-        if recoveryDuration > 0 {
-            let recoveryPoints = Int(recoveryDuration / 10) // Every 10 seconds during recovery
-            let recoveryStartTime = 30.0 + sustainedDuration
-            
-            for i in 0..<recoveryPoints {
-                let time = recoveryStartTime + (Double(i) * 10.0)
-                let progress = Double(i) / Double(recoveryPoints - 1)
-                // Gradual decline back to baseline
-                _ = baseline + 5 // Slightly above baseline at end
-                let currentElevation = peak - baseline
-                let remainingElevation = Int(Double(currentElevation) * (1.0 - progress))
-                let hr = baseline + remainingElevation + (i == recoveryPoints - 1 ? 0 : Int.random(in: -2...3))
-                pattern.append(OrthostaticEvent.HeartRatePoint(heartRate: hr, timeFromStanding: time))
-            }
-        }
-        
-        return pattern
-    }
-    
-    private func sendTestOrthostaticEventsToiPhone() {
-        // Send the test orthostatic events to iPhone for dashboard display
-        for event in orthostaticEvents.prefix(3) { // Send the 3 most recent events
-            WatchConnectivityManager.shared.sendOrthostaticEvent(
-                baselineHeartRate: event.baselineHeartRate,
-                peakHeartRate: event.peakHeartRate,
-                increase: event.increase,
-                severity: event.severity.rawValue,
-                sustainedDuration: event.sustainedDuration,
-                recoveryTime: event.recoveryTime,
-                isRecovered: event.isRecovered,
-                timestamp: event.timestamp
-            )
-            
-            print("📱 [TEST] Sent test orthostatic event to iPhone: \(event.clinicalSummary)")
-            
-            // Small delay to avoid overwhelming the connection
-            Thread.sleep(forTimeInterval: 0.1)
-        }
-    }
-    
-    // MARK: - Public method to manually send test data
-    func sendTestDataToiPhone() {
-        print("🔧 [MANUAL] Manually sending test orthostatic data to iPhone...")
-        sendTestOrthostaticEventsToiPhone()
-    }
-    
-    // MARK: - Manual Posture Control for Testing
+    #endif
+
+    // MARK: - Manual Posture Control for Testing (moved from old test code)
     func manuallySetStanding(_ standing: Bool) {
         print("🎛️ [MANUAL] User manually set posture to: \(standing ? "STANDING" : "SITTING")")
-        
+
         if standing && !isStanding {
             // Manually trigger standing detection
             startStandingDetection()
@@ -439,149 +309,23 @@ class HeartRateManager: NSObject, ObservableObject {
             // Manually trigger sitting detection
             endStandingDetection()
         }
-        
+
         // Also update the motion detection state directly for consistency
         DispatchQueue.main.async {
             self.isStanding = standing
-            
-            // Force send current heart rate with updated posture
+
+            // MVP1: Log posture change locally only
             if self.currentHeartRate > 0 {
-                print("🔄 [MANUAL] Force-sending heart rate \(self.currentHeartRate)")
-                WatchConnectivityManager.shared.sendHeartRateUpdate(
-                    heartRate: self.currentHeartRate, 
-                    delta: self.heartRateDelta,
-                    isStanding: self.isStanding
-                )
+                print("🔄 [WATCH-MVP1] Posture changed to \(standing ? "STANDING" : "SITTING"), HR: \(self.currentHeartRate) (local only)")
             }
         }
     }
-    
-    private func simulateOrthostaticEvent() {
-        // 60% chance of normal response, 40% chance of elevated response episode
-        let isElevatedEpisode = Double.random(in: 0...1) < 0.4
-        
-        if isElevatedEpisode {
-            simulateElevatedResponseEpisode()
-        } else {
-            simulateNormalOrthostaticResponse()
-        }
-    }
-    
-    private func simulateElevatedResponseEpisode() {
-        print("🧪 [SIMULATOR] Simulating elevated response episode with sustained elevation...")
-        
-        let baselineRate = Int.random(in: 68...78)
-        let increase = Int.random(in: 35...65) // Elevated response range increase (30+ BPM)
-        let peakRate = baselineRate + increase
-        
-        // Elevated response characteristics: sustained elevation for several minutes
-        let sustainedDuration = Double.random(in: 300...900) // 5-15 minutes (elevated response pattern)
-        let recoveryTime = Double.random(in: 0...1) < 0.3 ? nil : Double.random(in: 120...300) // 30% no recovery
-        
-        let pattern = generateRealisticHeartRatePattern(
-            baseline: baselineRate,
-            peak: peakRate,
-            sustainedDuration: sustainedDuration,
-            recoveryDuration: recoveryTime ?? 0
-        )
-        
-        let event = OrthostaticEvent(
-            timestamp: Date(),
-            baselineHeartRate: baselineRate,
-            peakHeartRate: peakRate,
-            increase: increase,
-            duration: sustainedDuration + (recoveryTime ?? 0) + 60,
-            sustainedDuration: sustainedDuration,
-            recoveryTime: recoveryTime,
-            heartRatePattern: pattern,
-            isRecovered: recoveryTime != nil
-        )
-        
-        print("🩺 [SIMULATOR] Standing Response Episode: \(event.clinicalSummary)")
-        completeSimulatedEvent(event, baselineRate, peakRate)
-    }
-    
-    private func simulateNormalOrthostaticResponse() {
-        print("🧪 [SIMULATOR] Simulating normal orthostatic response...")
-        
-        let baselineRate = Int.random(in: 70...85)
-        let increase = Int.random(in: 15...35) // Normal range increase
-        let peakRate = baselineRate + increase
-        
-        // Normal characteristics: brief elevation, quick recovery
-        let sustainedDuration = Double.random(in: 30...120) // 30 seconds to 2 minutes
-        let recoveryTime = Double.random(in: 30...90) // Quick recovery
-        
-        let pattern = generateRealisticHeartRatePattern(
-            baseline: baselineRate,
-            peak: peakRate,
-            sustainedDuration: sustainedDuration,
-            recoveryDuration: recoveryTime
-        )
-        
-        let event = OrthostaticEvent(
-            timestamp: Date(),
-            baselineHeartRate: baselineRate,
-            peakHeartRate: peakRate,
-            increase: increase,
-            duration: sustainedDuration + recoveryTime + 30,
-            sustainedDuration: sustainedDuration,
-            recoveryTime: recoveryTime,
-            heartRatePattern: pattern,
-            isRecovered: true
-        )
-        
-        print("✅ [SIMULATOR] Normal Response: \(event.clinicalSummary)")
-        completeSimulatedEvent(event, baselineRate, peakRate)
-    }
-    
-    private func completeSimulatedEvent(_ event: OrthostaticEvent, _ baselineRate: Int, _ peakRate: Int) {
-        DispatchQueue.main.async {
-            // Add to orthostatic events
-            self.orthostaticEvents.insert(event, at: 0)
-            
-            // Update current heart rate to the peak
-            self.updateHeartRate(peakRate)
-            
-            // Send to iPhone
-            WatchConnectivityManager.shared.sendOrthostaticEvent(
-                baselineHeartRate: baselineRate,
-                peakHeartRate: peakRate,
-                increase: event.increase,
-                severity: event.severity.rawValue,
-                sustainedDuration: event.sustainedDuration,
-                recoveryTime: event.recoveryTime,
-                isRecovered: event.isRecovered,
-                timestamp: event.timestamp
-            )
-            
-            print("🩺 [SIMULATOR] Event created: \(event.description)")
-            
-            // Keep only last 20 events
-            if self.orthostaticEvents.count > 20 {
-                self.orthostaticEvents.removeLast()
-            }
-        }
-        
-        // Simulate realistic recovery timing
-        let recoveryDelay = event.isRecovered ? (event.recoveryTime ?? 60.0) : 15.0
-        DispatchQueue.main.asyncAfter(deadline: .now() + recoveryDelay) {
-            let returnRate = event.isRecovered ? 
-                baselineRate + Int.random(in: -3...8) : // Full recovery with variation
-                baselineRate + Int.random(in: 15...25)  // Incomplete recovery
-            self.updateHeartRate(returnRate)
-            
-            let recoveryStatus = event.isRecovered ? "recovered to baseline" : "incomplete recovery"
-            print("🩺 [SIMULATOR] Heart rate \(recoveryStatus): \(returnRate) BPM after \(Int(recoveryDelay))s")
-        }
-    }
-    
-    deinit {
-        simulationTimer?.invalidate()
-        orthostaticTestTimer?.invalidate()
-    }
-    #endif
-    
+
+    // REMOVED OLD TEST FUNCTIONS - See TestDataGenerator.swift
+    // All test data generation code has been extracted to TestDataGenerator.swift
+    // This includes: addTestData(), addTestOrthostaticEvents(), createStandingResponseEpisode(),
+    // generateRealisticHeartRatePattern(), simulateOrthostaticEvent(), etc.
+
     // MARK: - Should Record Heart Rate Entry
     private func shouldRecordHeartRateEntry(heartRate: Int, delta: Int) -> Bool {
         // Always record the first entry
@@ -614,23 +358,8 @@ class HeartRateManager: NSObject, ObservableObject {
     func updateRecordingInterval(_ newInterval: TimeInterval) {
         recordingInterval = newInterval
         print("⏰ [WATCH] Recording interval updated to \(newInterval)s")
-        
-        // Update simulation timers if running
-        #if DEBUG && targetEnvironment(simulator)
-        if let timer = simulationTimer, timer.isValid {
-            timer.invalidate()
-            simulationTimer = Timer.scheduledTimer(withTimeInterval: newInterval, repeats: true) { [weak self] _ in
-                guard let self = self else { return }
-                let randomRate = Int.random(in: 60...180)
-                DispatchQueue.main.async {
-                    self.updateHeartRate(randomRate)
-                    let reading = HeartRateReading(heartRate: randomRate, timestamp: Date())
-                    self.heartRateHistory.append(reading)
-                    self.cleanupHistory()
-                }
-            }
-        }
-        #endif
+
+        // Note: Simulation timer updates removed - test data now in TestDataGenerator.swift
     }
     
     func requestAuthorization() {
@@ -797,6 +526,10 @@ class HeartRateManager: NSObject, ObservableObject {
             shouldRecord = true
         }
 
+        // MARK: - MVP2 FEATURE - Send Heart Rate to iPhone
+        // TODO: Re-enable for MVP2 when iPhone app is available
+        // Commented out: 2025-11-16 for MVP1 standalone watch app
+        /*
         // Only send to iPhone if interval has passed or it's a significant change
         if shouldRecord || abs(heartRateDelta) >= minorChangeThreshold {
             print("📱 [WATCH] Sending heart rate \(newRate) to iPhone with delta \(heartRateDelta) (interval: \(shouldRecord), significant: \(abs(heartRateDelta) >= minorChangeThreshold))")
@@ -804,6 +537,13 @@ class HeartRateManager: NSObject, ObservableObject {
             lastRecordedTime = now
         } else {
             print("⏰ [WATCH] Skipping heart rate update (waiting for interval)")
+        }
+        */
+
+        // MVP1: Data saved locally only (not synced to iPhone)
+        if shouldRecord || abs(heartRateDelta) >= minorChangeThreshold {
+            print("💓 [WATCH-MVP1] Heart rate: \(newRate) BPM, delta: \(heartRateDelta) (saved locally, not synced to iPhone)")
+            lastRecordedTime = now
         }
 
         // Check for orthostatic response
@@ -836,14 +576,22 @@ class HeartRateManager: NSObject, ObservableObject {
                 isMajor: absoluteDelta >= majorChangeThreshold
             )
             significantChanges.append(change)
-            
+
+            // MARK: - MVP2 FEATURE - Send Significant Changes to iPhone
+            // TODO: Re-enable for MVP2 when iPhone app is available
+            // Commented out: 2025-11-16 for MVP1 standalone watch app
+            /*
             // Send significant change to iPhone
             WatchConnectivityManager.shared.sendSignificantChange(
                 fromRate: previousHeartRate,
                 toRate: currentRate,
                 delta: heartRateDelta
             )
-            
+            */
+
+            // MVP1: Significant change saved locally only
+            print("📊 [WATCH-MVP1] Significant change: \(heartRateDelta > 0 ? "+" : "")\(heartRateDelta) BPM (\(previousHeartRate)→\(currentRate)) (saved locally, not synced to iPhone)")
+
             // Keep only last 50 changes
             if significantChanges.count > 50 {
                 significantChanges.removeFirst()
@@ -876,28 +624,32 @@ class HeartRateManager: NSObject, ObservableObject {
         alertMessage = message
         showAlert = true
         lastAlertTime = Date()
-        
-        // Haptic feedback + sound - all 30+ BPM changes require manual dismissal
+
+        // Haptic feedback - always enabled for accessibility
+        // Sound - only if alertSoundEnabled is true
         #if canImport(WatchKit)
         switch severity {
         case .minor:
-            // Minor alerts (30+ BPM) - notification haptic + sound
-            WKInterfaceDevice.current().play(.notification)
+            // Minor alerts (30+ BPM) - notification haptic with optional sound
+            let hapticType: WKHapticType = alertSoundEnabled ? .notification : .directionUp
+            WKInterfaceDevice.current().play(hapticType)
             // Multiple vibrations for more noticeable alert
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                WKInterfaceDevice.current().play(.notification)
+                WKInterfaceDevice.current().play(hapticType)
             }
         case .major:
-            // Major alerts (50+ BPM) - more intense haptic + sound
-            WKInterfaceDevice.current().play(.failure)
+            // Major alerts (50+ BPM) - more intense haptic with optional sound
+            let hapticType: WKHapticType = alertSoundEnabled ? .failure : .directionDown
+            WKInterfaceDevice.current().play(hapticType)
             // Multiple vibrations for major alerts
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                WKInterfaceDevice.current().play(.failure)
+                WKInterfaceDevice.current().play(hapticType)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                WKInterfaceDevice.current().play(.failure)
+                WKInterfaceDevice.current().play(hapticType)
             }
         }
+        print("🔔 [WATCH] Alert triggered: \(message) (sound: \(alertSoundEnabled ? "enabled" : "muted"))")
         #endif
     }
     
@@ -992,6 +744,45 @@ class HeartRateManager: NSObject, ObservableObject {
         if isAuthorized && !isMonitoring {
             startContinuousMonitoring()
         }
+    }
+
+    // MARK: - MVP1 FEATURE - Data Persistence Methods
+
+    private func loadPersistedData() {
+        // Load saved heart rate history
+        let savedHistory = WatchDataStore.shared.loadHeartRateHistory()
+        if !savedHistory.isEmpty {
+            self.heartRateHistory = savedHistory
+            print("💾 [WATCH-MVP1] Loaded \(savedHistory.count) heart rate readings from storage")
+        }
+
+        // Load saved orthostatic events
+        let savedEvents = WatchDataStore.shared.loadOrthostaticEvents()
+        if !savedEvents.isEmpty {
+            self.orthostaticEvents = savedEvents
+            print("💾 [WATCH-MVP1] Loaded \(savedEvents.count) orthostatic events from storage")
+        }
+
+        // Load watch settings
+        let settings = WatchDataStore.shared.loadSettings()
+        // Apply loaded settings to properties
+        self.recordingInterval = settings.recordingInterval
+        print("⚙️ [WATCH-MVP1] Loaded settings from storage (interval: \(Int(settings.recordingInterval))s)")
+    }
+
+    private func startPeriodicPersistence() {
+        persistenceTimer = Timer.scheduledTimer(withTimeInterval: persistenceInterval, repeats: true) { [weak self] _ in
+            self?.saveDataToStorage()
+        }
+        print("💾 [WATCH-MVP1] Started periodic data persistence (every \(Int(persistenceInterval))s)")
+    }
+
+    private func saveDataToStorage() {
+        WatchDataStore.shared.saveHeartRateHistory(heartRateHistory)
+        WatchDataStore.shared.saveOrthostaticEvents(orthostaticEvents)
+
+        let size = WatchDataStore.shared.getDataSize()
+        print("💾 [WATCH-MVP1] Saved data to watch storage (\(size) bytes)")
     }
 }
 
@@ -1204,7 +995,11 @@ extension HeartRateManager {
         
         orthostaticEvents.append(event)
         currentOrthostaticEvent = event
-        
+
+        // MARK: - MVP2 FEATURE - Send Orthostatic Events to iPhone
+        // TODO: Re-enable for MVP2 when iPhone app is available
+        // Commented out: 2025-11-16 for MVP1 standalone watch app
+        /*
         // Send to iPhone
         WatchConnectivityManager.shared.sendOrthostaticEvent(
             baselineHeartRate: standingBaselineHeartRate,
@@ -1216,7 +1011,12 @@ extension HeartRateManager {
             isRecovered: event.isRecovered,
             timestamp: event.timestamp
         )
-        
+        */
+
+        // MVP1: Save orthostatic event to local storage
+        WatchDataStore.shared.saveOrthostaticEvents(orthostaticEvents)
+        print("🚨 [WATCH-MVP1] Orthostatic event: +\(increase) BPM (\(standingBaselineHeartRate)→\(peakHR)), sustained \(Int(sustainedDuration))s (saved locally, not synced to iPhone)")
+
         print("🩺 [WATCH] Sustained elevation event: \(event.description)")
         
         // Keep only last 20 events
@@ -1247,10 +1047,10 @@ extension HeartRateManager {
     
     private func finalizeCurrentOrthostaticEvent() {
         guard isCurrentlyElevated, let elevationStart = elevatedStartTime else { return }
-        
+
         let sustainedDuration = Date().timeIntervalSince(elevationStart)
         let standingDuration = Date().timeIntervalSince(standingStartTime ?? Date())
-        
+
         // Create final event for any ongoing elevation
         createSustainedElevationEvent(sustainedDuration: sustainedDuration, endTime: standingDuration)
     }

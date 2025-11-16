@@ -185,7 +185,7 @@ class MotionDetectionManager: ObservableObject {
                 self?.confirmStateChange(to: newStanding, delayedChange: true)
             }
         } else {
-            // Sitting → Standing: Immediate response (important for POTS monitoring)
+            // Sitting → Standing: Immediate response (important for posture change detection)
             confirmStateChange(to: newStanding, delayedChange: false)
         }
     }
