@@ -1,5 +1,89 @@
 # SecureHeart Development Work Log
 
+## 2025-11-16 (Evening Session) - UI Improvements & Smart Recording
+
+### UI Simplification - Removed Color Customization
+**Time:** Evening Session
+**Status:** ✅ COMPLETED
+
+#### Problem
+- Too many color customization options causing UI complexity
+- Users reported "colors keep going wonky"
+- Background and BPM text color pickers adding unnecessary variables
+
+#### Solution Implemented
+1. **Deleted BackgroundThemeView.swift** - Entire file removed
+2. **Removed BPMTextColorView struct** from SettingsView.swift (lines 724-868)
+3. **Removed NavigationLinks** to both color pickers from Settings UI
+4. **Kept smart auto-matching logic:**
+   - Watch faces WITH hearts (Classic, Details): BPM text matches background
+   - Watch faces WITHOUT hearts: BPM text uses zone colors (blue/green/yellow/red)
+   - Users can still select heart rate color themes
+
+#### Files Modified
+- `SettingsView.swift` - Removed color picker navigation and BPMTextColorView struct
+- `BackgroundThemeView.swift` - DELETED
+- Build verified successful, app runs without crashes
+
+---
+
+### Smart Heart Rate History Recording
+**Time:** Evening Session
+**Status:** ✅ COMPLETED
+
+#### Problem
+- Heart rate history recording EVERY sample from HealthKit
+- Bloated history with unnecessary constant data
+- No intelligent filtering of significant events
+
+#### Solution Implemented
+**Smart Recording Strategy** - Only record to history when:
+1. ⏰ **Time-based**: Every 5 minutes (changed from 60s default)
+2. 📈 **Significant delta**: ±30 BPM change from last recorded value
+3. 🎯 **New extremes**: New daily high or low heart rate
+4. 🆕 **First reading**: Always record first reading
+
+#### Code Changes
+**HeartRateManager.swift:217-219**
+- Changed `recordingInterval` default from 60s to **300s (5 minutes)**
+- Added `lastRecordedHeartRate` to track deltas between recordings
+
+**HeartRateManager.swift:509-545**
+- Added `shouldRecordToHistory()` function with smart recording logic
+- Checks time interval, significant deltas, and new extremes
+
+**HeartRateManager.swift:500-508**
+- Updated `processHeartRateSamples()` to use smart recording
+- Only appends to history when criteria met
+- Added debug logging for tracking recorded vs skipped readings
+
+#### Benefits
+- ✅ Cleaner, more meaningful history data
+- ✅ Better app performance (less data processing)
+- ✅ Still captures all POTS-relevant events (30+ BPM changes)
+- ✅ Reduced storage usage over time
+
+---
+
+### BPM Text Size Increase - Classic Watch Face
+**Time:** Evening Session
+**Status:** ✅ COMPLETED
+
+#### Problem
+- BPM numbers on Classic watch face too small for quick glance reading
+
+#### Solution Implemented
+**HeartRateView.swift:684, 688**
+- **BPM number**: Increased from size 36 → **58** (61% larger)
+- **"BPM" label**: Increased from size 11 → **15** (proportional increase)
+
+#### Result
+- Numbers now very prominent and easy to read at a glance
+- Better accessibility for quick heart rate checks
+- Build verified successful, visually tested on simulator
+
+---
+
 ## 2025-11-16 - Strategic Pivot to Standalone Watch App MVP1
 
 ### Major Decision: Watch App First, iPhone App MVP2

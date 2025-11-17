@@ -227,11 +227,11 @@ struct WatchFaceView: View {
         let hr = heartRateManager.currentHeartRate
         if hr == 0 {
             return .gray
-        } else if hr < 60 {
+        } else if hr < 80 {
             return .blue
-        } else if hr < 100 {
+        } else if hr <= 120 {
             return .green
-        } else if hr < 140 {
+        } else if hr <= 150 {
             return .yellow
         } else {
             return .red
@@ -342,8 +342,9 @@ struct WatchFaceViewMinimal: View {
     private var heartColor: Color {
         let hr = heartRateManager.currentHeartRate
         if hr == 0 { return .gray }
-        else if hr < 100 { return .green }
-        else if hr < 140 { return .yellow }
+        else if hr < 80 { return .blue }
+        else if hr <= 120 { return .green }
+        else if hr <= 150 { return .yellow }
         else { return .red }
     }
 }
@@ -494,8 +495,9 @@ struct WatchFaceViewAnalog: View {
     private var heartColor: Color {
         let hr = heartRateManager.currentHeartRate
         if hr == 0 { return .gray }
-        else if hr < 100 { return .green }
-        else if hr < 140 { return .yellow }
+        else if hr < 80 { return .blue }
+        else if hr <= 120 { return .green }
+        else if hr <= 150 { return .yellow }
         else { return .red }
     }
 }

@@ -681,11 +681,11 @@ struct HeartRateView: View {
                 
                 VStack(spacing: 2) {
                     Text("\(heartRateManager.currentHeartRate)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(.system(size: 58, weight: .bold, design: .rounded))
                         .foregroundColor(effectiveBPMTextColor)
 
                     Text("BPM")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(effectiveBPMTextColor.opacity(0.8))
                 }
             }

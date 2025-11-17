@@ -214,8 +214,11 @@ class HeartRateManager: NSObject, ObservableObject {
     private let alertCooldown: TimeInterval = 30 // Don't repeat alerts for 30 seconds
     
     // Recording interval (configurable via settings)
-    @Published var recordingInterval: TimeInterval = 60.0
+    @Published var recordingInterval: TimeInterval = 300.0 // Default: 5 minutes (normal mode)
+    private let significantDeltaRecordingInterval: TimeInterval = 60.0 // 1 minute during significant changes
     private var lastRecordedTime: Date? = nil
+    private var lastRecordedHeartRate: Int? = nil
+    private var isInSignificantDeltaMode: Bool = false // Track if we're in rapid change mode
 
     // Alert sound settings (haptics always enabled for accessibility)
     private var alertSoundEnabled: Bool {
@@ -496,8 +499,15 @@ class HeartRateManager: NSObject, ObservableObject {
                     }
                 }
 
-                // Add to history
-                self.heartRateHistory.append(reading)
+                // Smart recording: Only add to history if it meets recording criteria
+                if self.shouldRecordToHistory(heartRate: heartRate, timestamp: sample.endDate) {
+                    self.heartRateHistory.append(reading)
+                    self.lastRecordedTime = sample.endDate
+                    self.lastRecordedHeartRate = heartRate
+                    print("📊 [WATCH] Recorded to history: \(heartRate) BPM at \(sample.endDate)")
+                } else {
+                    print("⏭️ [WATCH] Skipped recording: \(heartRate) BPM (no significant change)")
+                }
             }
             
             // Clean up old history entries
@@ -505,6 +515,60 @@ class HeartRateManager: NSObject, ObservableObject {
         }
     }
     
+    // MARK: - Smart Recording Logic
+
+    /// Determines if a heart rate reading should be recorded to history
+    /// Normal mode: Records every 5 minutes
+    /// Significant delta mode: Records every 1 minute when heart rate changes rapidly (±30 BPM)
+    private func shouldRecordToHistory(heartRate: Int, timestamp: Date) -> Bool {
+        // Always record the first reading
+        guard !heartRateHistory.isEmpty else {
+            print("📊 [RECORDING] First reading - recording")
+            return true
+        }
+
+        // Must have a last recorded time to proceed
+        guard let lastTime = lastRecordedTime, let lastRecorded = lastRecordedHeartRate else {
+            print("📊 [RECORDING] No last recorded data - recording")
+            return true
+        }
+
+        // Calculate time since last recording
+        let timeSinceLastRecord = timestamp.timeIntervalSince(lastTime)
+
+        // Calculate delta from last RECORDED heart rate
+        let delta = abs(heartRate - lastRecorded)
+
+        // Check if we're experiencing a significant delta (±30 BPM)
+        let hasSignificantDelta = delta >= 30
+
+        // Update significant delta mode status
+        if hasSignificantDelta && !isInSignificantDeltaMode {
+            isInSignificantDeltaMode = true
+            print("🔥 [RECORDING] Entering significant delta mode (Δ\(delta) BPM)")
+        } else if !hasSignificantDelta && isInSignificantDeltaMode && delta < 15 {
+            // Exit significant delta mode when heart rate stabilizes (within 15 BPM)
+            isInSignificantDeltaMode = false
+            print("✅ [RECORDING] Exiting significant delta mode (heart rate stabilized)")
+        }
+
+        // Determine required interval based on mode
+        let requiredInterval = isInSignificantDeltaMode ? significantDeltaRecordingInterval : recordingInterval
+
+        // Only record if enough time has passed
+        if timeSinceLastRecord >= requiredInterval {
+            let mode = isInSignificantDeltaMode ? "DELTA MODE (1 min)" : "NORMAL (5 min)"
+            print("📊 [RECORDING] Time threshold met - recording (\(mode), Δ\(delta) BPM, \(Int(timeSinceLastRecord))s elapsed)")
+            return true
+        }
+
+        // Don't record - not enough time has passed
+        let mode = isInSignificantDeltaMode ? "1 min" : "5 min"
+        let timeLeft = Int(requiredInterval - timeSinceLastRecord)
+        print("⏭️ [RECORDING] Skipped - need \(timeLeft)s more for \(mode) interval (Δ\(delta) BPM)")
+        return false
+    }
+
     private func updateHeartRate(_ newRate: Int) {
         // Store previous rate
         if currentHeartRate > 0 {
@@ -514,7 +578,7 @@ class HeartRateManager: NSObject, ObservableObject {
         // Update current rate
         currentHeartRate = newRate
 
-        // Check if enough time has passed since last recording
+        // Check if enough time has passed since last recording (for iPhone sync in MVP2)
         let now = Date()
         let shouldRecord: Bool
 
@@ -749,6 +813,16 @@ class HeartRateManager: NSObject, ObservableObject {
     // MARK: - MVP1 FEATURE - Data Persistence Methods
 
     private func loadPersistedData() {
+        // One-time migration: Clear old high-frequency history data (Nov 17, 2025)
+        let migrationKey = "heartRateHistoryMigration_v2_2025_11_17"
+        if !UserDefaults.standard.bool(forKey: migrationKey) {
+            print("🔄 [MIGRATION] Clearing old high-frequency history data...")
+            WatchDataStore.shared.clearHeartRateHistory()
+            UserDefaults.standard.set(true, forKey: migrationKey)
+            print("✅ [MIGRATION] Migration complete - starting with fresh history")
+            return // Don't load old data
+        }
+
         // Load saved heart rate history
         let savedHistory = WatchDataStore.shared.loadHeartRateHistory()
         if !savedHistory.isEmpty {
