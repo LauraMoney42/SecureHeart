@@ -1,5 +1,60 @@
 # SecureHeart Development Work Log
 
+## 2025-11-17 - Neutrals Theme Implementation
+
+### Neutrals Color Theme with Light Background
+**Time:** Afternoon Session
+**Status:** ✅ COMPLETED
+
+#### Feature Request
+- Add new "Neutrals" theme with peachy/tan color palette
+- Automatically use light background instead of default black
+- Ensure text visibility with dark text on light background
+
+#### Solution Implemented
+
+**1. Added Neutrals Theme (HeartRateView.swift:143-149)**
+- Created new ColorTheme "Neutrals" at index 13
+- Color palette:
+  - Low HR: Light peachy cream `(0.96, 0.90, 0.83)`
+  - Normal HR: Medium tan `(0.79, 0.63, 0.46)`
+  - Elevated HR: Dark tan `(0.55, 0.44, 0.28)`
+  - High HR: Deep brown `(0.65, 0.35, 0.25)`
+  - No reading: Soft gray `(0.85, 0.85, 0.85)`
+
+**2. Light Background Auto-Loading (HeartRateView.swift:602-605)**
+- Added special case for Neutrals theme in `themeBackgroundColor`
+- Automatically uses soft cream background: `Color(red: 0.98, green: 0.96, blue: 0.94)`
+- Distinct from all other themes which default to dark backgrounds
+
+**3. Dark Text for Visibility (HeartRateView.swift:647-650)**
+- Added special case in `effectiveBPMTextColor`
+- Uses dark brown text: `Color(red: 0.35, green: 0.25, blue: 0.20)`
+- Ensures good contrast and readability on light background
+- Color complements the neutral palette
+
+**4. Updated Custom Theme Index**
+- Custom theme moved from index 13 to index 14 (now last of 15 themes)
+- Updated all Custom theme references throughout HeartRateView.swift
+- Ensures correct theme selection logic
+
+#### Files Modified
+- `HeartRateView.swift` - Added Neutrals theme, light background logic, dark text logic
+- `SettingsView.swift` - Updated theme picker to show Neutrals option
+
+#### Testing
+- Build successful with no errors
+- App launched on Watch simulator
+- Ready for user testing on physical device
+
+#### Benefits
+- ✅ Unique light-themed option for users who prefer softer aesthetics
+- ✅ Good contrast and accessibility
+- ✅ Professional neutral color palette
+- ✅ Automatic color coordination (no manual configuration needed)
+
+---
+
 ## 2025-11-16 (Evening Session) - UI Improvements & Smart Recording
 
 ### UI Simplification - Removed Color Customization

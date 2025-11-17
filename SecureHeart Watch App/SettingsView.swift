@@ -123,6 +123,14 @@ struct SettingsView: View {
             noReadingColor: Color(red: 0.85, green: 0.85, blue: 0.85) // Soft gray
         ),
         ColorTheme(
+            name: "Neutrals",
+            lowColor: Color(red: 0.96, green: 0.90, blue: 0.83),   // Light peachy cream
+            normalColor: Color(red: 0.79, green: 0.63, blue: 0.46), // Medium tan
+            elevatedColor: Color(red: 0.55, green: 0.44, blue: 0.28), // Dark tan
+            highColor: Color(red: 0.65, green: 0.35, blue: 0.25),  // Deep brown
+            noReadingColor: Color(red: 0.85, green: 0.85, blue: 0.85) // Soft gray
+        ),
+        ColorTheme(
             name: "Custom",
             lowColor: .blue,  // Will be overridden by user-selected colors
             normalColor: .green,
@@ -142,17 +150,9 @@ struct SettingsView: View {
                             Image(systemName: "paintpalette")
                                 .foregroundColor(.blue)
                                 .frame(width: 24)
-                            Text("Themes")
+                            Text("Appearance")
                                 .padding(.vertical, 6)
                         }
-                    }
-
-                    // Time display toggle
-                    HStack {
-                        Image(systemName: "clock")
-                            .foregroundColor(.purple)
-                            .frame(width: 24)
-                        Toggle("Show Theme Time", isOn: $showTimeOnWatch)
                     }
                 }
 
@@ -169,34 +169,10 @@ struct SettingsView: View {
                     print("🔊 [SETTINGS] Alert sound \(newValue ? "enabled" : "muted")")
                 }
 
-                Section("Data") {
-                    NavigationLink(destination: HeartRateView()) {
-                        HStack {
-                            Image(systemName: "clock")
-                                .foregroundColor(.green)
-                                .frame(width: 20)
-                            Text("History")
-                        }
-                    }
+                // MARK: - MVP1 - Data Section Removed
+                // History is accessed via swipe up on watch face
+                // Send Test Data removed for MVP1 standalone watch app
 
-                    // MARK: - MVP2 FEATURE - Send Test Data to iPhone
-                    // TODO: Re-enable for MVP2 when iPhone app is available
-                    // Commented out: 2025-11-16 for MVP1 standalone watch app
-                    /*
-                    Button(action: {
-                        heartRateManager.sendTestDataToiPhone()
-                    }) {
-                        HStack {
-                            Image(systemName: "iphone.and.arrow.forward")
-                                .foregroundColor(.blue)
-                                .frame(width: 20)
-                            Text("Send Test Data")
-                                .foregroundColor(.primary)
-                        }
-                    }
-                    */
-                }
-                
                 // Section("Debug - Posture Detection") - Commented out for MVP2
                 /*
                 Section("Debug - Posture Detection") {
@@ -267,14 +243,14 @@ struct ThemesView: View {
     @Binding var selectedColorTheme: Int
     let colorThemes: [ColorTheme]
     @State private var showingCustomPicker = false
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 Text("Heart Rate Color Themes")
                     .font(.headline)
                     .padding(.top)
-                
+
                 VStack(spacing: 8) {
                     ForEach(0..<colorThemes.count, id: \.self) { index in
                         ThemeSelectionRow(
@@ -291,7 +267,7 @@ struct ThemesView: View {
                     }
                 }
                 .padding(.horizontal, 8)
-                
+
                 // Show edit button for custom theme
                 if selectedColorTheme == colorThemes.count - 1 {
                     NavigationLink(destination: CustomColorPickerView()) {
@@ -326,7 +302,7 @@ struct ThemesView: View {
                 .padding(.top)
             }
         }
-        .navigationTitle("Themes")
+        .navigationTitle("Appearance")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -544,7 +520,115 @@ struct CustomColorPickerView: View {
     @AppStorage("customNormalColor") private var customNormalColorHex = "#34C759"
     @AppStorage("customElevatedColor") private var customElevatedColorHex = "#FFCC00"
     @AppStorage("customHighColor") private var customHighColorHex = "#FF3B30"
-    
+    @AppStorage("customBackgroundColor") private var customBackgroundColorHex = "#000000"
+    @AppStorage("customBPMTextColor") private var customBPMTextColorHex = "#FFFFFF"
+
+    var body: some View {
+        List {
+            Section("Heart Rate Zones") {
+                NavigationLink(destination: ColorPickerDetailView(title: "Low (< 80 BPM)", selectedColorHex: $customLowColorHex)) {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: customLowColorHex) ?? .blue)
+                            .frame(width: 30, height: 30)
+                        Text("Low (< 80 BPM)")
+                        Spacer()
+                    }
+                }
+
+                NavigationLink(destination: ColorPickerDetailView(title: "Normal (80-120)", selectedColorHex: $customNormalColorHex)) {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: customNormalColorHex) ?? .green)
+                            .frame(width: 30, height: 30)
+                        Text("Normal (80-120)")
+                        Spacer()
+                    }
+                }
+
+                NavigationLink(destination: ColorPickerDetailView(title: "Elevated (120-150)", selectedColorHex: $customElevatedColorHex)) {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: customElevatedColorHex) ?? .yellow)
+                            .frame(width: 30, height: 30)
+                        Text("Elevated (120-150)")
+                        Spacer()
+                    }
+                }
+
+                NavigationLink(destination: ColorPickerDetailView(title: "High (> 150)", selectedColorHex: $customHighColorHex)) {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: customHighColorHex) ?? .red)
+                            .frame(width: 30, height: 30)
+                        Text("High (> 150)")
+                        Spacer()
+                    }
+                }
+            }
+
+            Section("Appearance") {
+                NavigationLink(destination: ColorPickerDetailView(title: "Background", selectedColorHex: $customBackgroundColorHex)) {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: customBackgroundColorHex) ?? .black)
+                            .frame(width: 30, height: 30)
+                        Text("Background")
+                        Spacer()
+                    }
+                }
+
+                NavigationLink(destination: ColorPickerDetailView(title: "BPM Text Color", selectedColorHex: $customBPMTextColorHex)) {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: customBPMTextColorHex) ?? .white)
+                            .frame(width: 30, height: 30)
+                        Text("BPM Text Color")
+                        Spacer()
+                    }
+                }
+            }
+
+            Section("Preview") {
+                // Background preview
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(hex: customBackgroundColorHex) ?? .black)
+                    .frame(height: 50)
+                    .overlay(
+                        Text("\(Int.random(in: 70...120))")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(Color(hex: customBPMTextColorHex) ?? .white)
+                    )
+                    .listRowInsets(EdgeInsets())
+
+                // Heart rate zone colors
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(Color(hex: customLowColorHex) ?? .blue)
+                        .frame(width: 30, height: 30)
+                    Circle()
+                        .fill(Color(hex: customNormalColorHex) ?? .green)
+                        .frame(width: 30, height: 30)
+                    Circle()
+                        .fill(Color(hex: customElevatedColorHex) ?? .yellow)
+                        .frame(width: 30, height: 30)
+                    Circle()
+                        .fill(Color(hex: customHighColorHex) ?? .red)
+                        .frame(width: 30, height: 30)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .navigationTitle("Custom Colors")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Color Picker Detail View
+struct ColorPickerDetailView: View {
+    let title: String
+    @Binding var selectedColorHex: String
+
     // Simple preset colors for easy selection
     let presetColors: [Color] = [
         .red, .orange, .yellow, .green, .mint, .teal,
@@ -564,68 +648,50 @@ struct CustomColorPickerView: View {
         Color(hex: "#DCC6EC") ?? .purple, // Lavender
         Color(hex: "#FFD084") ?? .orange // Peach
     ]
-    
+
+    var currentColor: Color {
+        Color(hex: selectedColorHex) ?? .gray
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                Text("Custom Colors")
-                    .font(.headline)
+                // Current color preview
+                Circle()
+                    .fill(currentColor)
+                    .frame(width: 60, height: 60)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                    )
                     .padding(.top)
-                
-                // Low Heart Rate Color
-                ColorPickerRow(
-                    title: "Low (< 80 BPM)",
-                    selectedColorHex: $customLowColorHex,
-                    presetColors: presetColors
-                )
-                
-                // Normal Heart Rate Color
-                ColorPickerRow(
-                    title: "Normal (80-120)",
-                    selectedColorHex: $customNormalColorHex,
-                    presetColors: presetColors
-                )
-                
-                // Elevated Heart Rate Color
-                ColorPickerRow(
-                    title: "Elevated (120-150)",
-                    selectedColorHex: $customElevatedColorHex,
-                    presetColors: presetColors
-                )
-                
-                // High Heart Rate Color
-                ColorPickerRow(
-                    title: "High (> 150)",
-                    selectedColorHex: $customHighColorHex,
-                    presetColors: presetColors
-                )
-                
-                // Preview
-                VStack(spacing: 8) {
-                    Text("Preview")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color(hex: customLowColorHex) ?? .blue)
-                            .frame(width: 30, height: 30)
-                        Circle()
-                            .fill(Color(hex: customNormalColorHex) ?? .green)
-                            .frame(width: 30, height: 30)
-                        Circle()
-                            .fill(Color(hex: customElevatedColorHex) ?? .yellow)
-                            .frame(width: 30, height: 30)
-                        Circle()
-                            .fill(Color(hex: customHighColorHex) ?? .red)
-                            .frame(width: 30, height: 30)
+
+                Text("Select a color")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+
+                // Color grid
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 35))], spacing: 12) {
+                    ForEach(0..<presetColors.count, id: \.self) { index in
+                        Button(action: {
+                            selectedColorHex = presetColors[index].toHex()
+                        }) {
+                            Circle()
+                                .fill(presetColors[index])
+                                .frame(width: 35, height: 35)
+                                .overlay(
+                                    Circle()
+                                        .stroke(currentColor == presetColors[index] ? Color.white : Color.clear, lineWidth: 3)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
-                .padding(.top)
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
+            .padding(.bottom)
         }
-        .navigationTitle("Custom Colors")
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

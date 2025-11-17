@@ -31,6 +31,8 @@ struct HeartRateView: View {
     @AppStorage("customNormalColor") private var customNormalColorHex = "#34C759" // Green
     @AppStorage("customElevatedColor") private var customElevatedColorHex = "#FFCC00" // Yellow
     @AppStorage("customHighColor") private var customHighColorHex = "#FF3B30" // Red
+    @AppStorage("customBackgroundColor") private var customBackgroundColorHex = "#000000" // Black
+    @AppStorage("customBPMTextColor") private var customBPMTextColorHex = "#FFFFFF" // White
     
     private let colorThemes: [ColorTheme] = [
         ColorTheme(
@@ -135,6 +137,14 @@ struct HeartRateView: View {
             normalColor: Color(red: 1.0, green: 0.7, blue: 0.6),   // Peach
             elevatedColor: Color(red: 1.0, green: 0.5, blue: 0.4), // Coral
             highColor: Color(red: 0.9, green: 0.3, blue: 0.5),     // Pink-red
+            noReadingColor: Color(red: 0.85, green: 0.85, blue: 0.85) // Soft gray
+        ),
+        ColorTheme(
+            name: "Neutrals",
+            lowColor: Color(red: 0.96, green: 0.90, blue: 0.83),   // Light peachy cream
+            normalColor: Color(red: 0.79, green: 0.63, blue: 0.46), // Medium tan
+            elevatedColor: Color(red: 0.55, green: 0.44, blue: 0.28), // Dark tan
+            highColor: Color(red: 0.65, green: 0.35, blue: 0.25),  // Deep brown
             noReadingColor: Color(red: 0.85, green: 0.85, blue: 0.85) // Soft gray
         ),
         ColorTheme(
@@ -584,6 +594,17 @@ struct HeartRateView: View {
     
     // Background color based on theme selection
     private var themeBackgroundColor: Color {
+        // Use custom background color if Custom theme is selected
+        if selectedColorTheme == 14 { // Custom theme is index 14 (last of 15 themes)
+            return Color(hex: customBackgroundColorHex) ?? .black
+        }
+
+        // Neutrals theme uses white/cream background
+        if selectedColorTheme == 13 { // Neutrals theme
+            return Color(red: 0.98, green: 0.96, blue: 0.94) // Soft cream/white
+        }
+
+        // Otherwise use the selected background from palette
         if selectedBackgroundColor < allBackgroundColors.count {
             return allBackgroundColors[selectedBackgroundColor]
         }
@@ -623,6 +644,16 @@ struct HeartRateView: View {
 
     // Effective BPM text color - auto-matches background or uses zone colors if user hasn't explicitly chosen
     private var effectiveBPMTextColor: Color {
+        // Neutrals theme uses dark brown text on light background
+        if selectedColorTheme == 13 { // Neutrals theme
+            return Color(red: 0.35, green: 0.25, blue: 0.20) // Dark brown to match theme
+        }
+
+        // Use custom BPM text color if Custom theme is selected
+        if selectedColorTheme == 14 { // Custom theme is index 14 (last of 15 themes)
+            return Color(hex: customBPMTextColorHex) ?? .white
+        }
+
         // If user has explicitly chosen a BPM color, use that
         if bpmTextColorUserChosen {
             return customBPMTextColor
@@ -986,12 +1017,29 @@ struct HeartRateView: View {
                     }
                 
                 VStack(spacing: 0) {
-                    // Header with close indicator
-                    Text("Heart Rate History")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.top, 50) // Move down more to avoid settings icon
-                        .padding(.bottom, 15)
+                    // Header with close button
+                    ZStack {
+                        Text("Heart Rate History")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showingHistory = false
+                                }
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.trailing, 8)
+                        }
+                    }
+                    .padding(.top, 50) // Move down more to avoid settings icon
+                    .padding(.bottom, 15)
                     
                     // History list - Much larger and more readable
                     ScrollView {
